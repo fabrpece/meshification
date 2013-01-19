@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 2.8)
+project(meshification)
+add_definitions(-std=c++0x)
+
+find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED)
+add_subdirectory(3dzip)
+include_directories(${OpenCV_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OPENNI_INCLUDE_DIRS})
+set_source_files_properties(triangle.cpp PROPERTIES COMPILE_DEFINITIONS "TRILIBRARY;EXTERNAL_TEST;ANSI_DECLARATORS")
+add_executable(main main.cpp DepthMeshifier.hpp DepthMeshifier.cpp Triangulator.hpp Triangulator.cpp triangle.h triangle.cpp SurfaceReconstruction.hpp SurfaceReconstruction.cpp MeshBuilder.hpp MeshBuilder.cpp Consumer.hpp Consumer.cpp VideoEncoder.hpp VideoEncoder.cpp SourceRaw.hpp SourceRaw.cpp SourceKinect.hpp SourceKinect.cpp SourceOni.hpp SourceOni.cpp DepthFilter.hpp DepthFilter.cpp)
+target_link_libraries(main ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip vpx)
+add_subdirectory(viewer)
+add_subdirectory(virtual_camera)
