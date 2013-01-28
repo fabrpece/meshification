@@ -209,6 +209,7 @@
 /*   you do not have enough memory.                                          */
 
 /* #define SINGLE */
+#define SINGLE
 
 #ifdef SINGLE
 #define REAL float
@@ -245,7 +246,7 @@
 /*   generating an object library (triangle.o) by defining the TRILIBRARY    */
 /*   symbol.                                                                 */
 
-/* #define REDUCED */
+#define REDUCED
 /* #define CDT_ONLY */
 
 /* On some machines, my exact arithmetic routines might be defeated by the   */

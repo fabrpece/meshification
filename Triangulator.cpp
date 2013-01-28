@@ -21,7 +21,7 @@
 #include <unordered_set>
 #include <opencv2/opencv.hpp>
 #include <pcl/range_image/range_image_planar.h>
-#define REAL double
+#define REAL float
 #define VOID void
 #define ANSI_DECLARATORS
 #include "triangle.h"
@@ -43,30 +43,33 @@ try {
 	return 0;
     if (cloud.get() == 0)
 	return 0;
-    const cv::Point p0(triorg[0], triorg[1]);
-    const cv::Point p1(tridest[0], tridest[1]);
-    const cv::Point p2(triapex[0], triapex[1]);
-    const Eigen::Vector3f p03 = pcl::RangeImage::getEigenVector3f(cloud->at(p0.x, p0.y));
-    const Eigen::Vector3f p13 = pcl::RangeImage::getEigenVector3f(cloud->at(p1.x, p1.y));
-    const Eigen::Vector3f p23 = pcl::RangeImage::getEigenVector3f(cloud->at(p2.x, p2.y));
-    const Eigen::Vector3f pm3 = (p03 + p13 + p23) / 3.0f;
+    const float x0 = static_cast<float>(triorg[0]), y0 = static_cast<float>(triorg[1]);
+    const float x1 = static_cast<float>(tridest[0]), y1 = static_cast<float>(tridest[1]);
+    const float x2 = static_cast<float>(triapex[0]), y2 = static_cast<float>(triapex[1]);
+    const float xm = (x0 + x1 + x2) / 3.0f;
+    const float ym = (y0 + y1 + y2) / 3.0f;
+    if (cloud->isValid(xm, ym) == false && cloud->isValid(x0, y0) == false && cloud->isValid(x1, y1) == false && cloud->isValid(x2, y2) == false)
+        return 0;
+    if (cloud->isValid(xm, ym) == false || cloud->isValid(x0, y0) == false || cloud->isValid(x1, y1) == false || cloud->isValid(x2, y2) == false)
+        return 1;
+    const auto p03 = cloud->getEigenVector3f(x0, y0);
+    const auto p13 = cloud->getEigenVector3f(x1, y1);
+    const auto p23 = cloud->getEigenVector3f(x2, y2);
+    const auto pm3 = (p03 + p13 + p23) / 3.0f;
     int pmx, pmy;
     cloud->getImagePoint(pm3[0], pm3[1], pm3[2], pmx, pmy);
-    const Eigen::Vector3f actual_pm = pcl::RangeImage::getEigenVector3f(cloud->at(pmx, pmy));
-    const float zm = actual_pm[2];
-    if (isNan(zm) && isNan(p03[2]) && isNan(p13[2]) && isNan(p23[2]))
-	return 0;
-    if (isNan(zm) || isNan(p03[2]) || isNan(p13[2]) || isNan(p23[2]))
-	return 1;
-    const Eigen::Vector3f n = (p13 - p03).cross(p23 - p03);
+    if (cloud->isValid(pmx, pmy) == false)
+        return 1;
+    const auto actual_pm = cloud->getEigenVector3f(pmx, pmy);
+    const auto n = (p13 - p03).cross(p23 - p03);
     const float d = -p03.dot(n);
     const float n_norm = n.norm();
     const double area3d = n_norm / 2.0;
     if (area3d < 10e-4)
 	return 0;
     const float distance = std::abs((actual_pm.dot(n) + d) / n_norm);
-    const double centre_diff = (pm3 - actual_pm).norm();
-    const double sqrt3 = 1.7320508075688772;
+    //const double centre_diff = (pm3 - actual_pm).norm();
+    //const double sqrt3 = 1.7320508075688772;
     //const double side = std::sqrt(area3d * 4.0 / sqrt3);
     //std::cout << centre_diff << ' ' << std::abs(zm - pm3[2]) << ' ' << distance << ' ' << side << std::endl;
     //if (centre_diff < distance)
@@ -101,7 +104,8 @@ try {
   } else {
     return 0;
   }
-} catch (const std::exception&) {
+} catch (const std::exception& e) {
+    std::cerr << __func__ << " exception: " << e.what() << std::endl;
     return 0;
 }
 
@@ -135,7 +139,7 @@ struct Triangulator::Impl
 {
     cv::Mat indices;
     std::unordered_set<Segment, SegmentHasher> segment_indices;
-    std::vector<double> points, holes;
+    std::vector<REAL> points, holes;
     std::vector<int> segments;
     triangulateio in, out;
     std::vector<unsigned> triangles;
@@ -262,32 +266,26 @@ static cv::Point median_point(const cv::Point* p)
 
 void Triangulator::draw(cv::Mat& output) const
 {
-    for (int i = 0; i < p_->out.numberoftriangles; ++i) {
+    for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
 	const int* tri_p = &p_->out.trianglelist[3 * i];
 	cv::Point p[3];
 	for (int j = 0; j < 3; ++j) {
-	    const double* ptr = &p_->out.pointlist[2 * tri_p[j]];
+	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
 	    p[j] = cv::Point(ptr[0], ptr[1]);
 	}
-	typedef pcl::RangeImagePlanar::PointType Point;
-	const Point p03 = cloud->at(p[0].x, p[0].y);
-	const Point p13 = cloud->at(p[1].x, p[1].y);
-	const Point p23 = cloud->at(p[2].x, p[2].y);
-	Point pm3;
-	pm3.x = (p03.x + p13.x + p23.x) / 3.0f;
-	pm3.y = (p03.y + p13.y + p23.y) / 3.0f;
-	pm3.z = (p03.z + p13.z + p23.z) / 3.0f;
-	int pmx, pmy;
-	cloud->getImagePoint(pm3.x, pm3.y, pm3.z, pmx, pmy);
-	const float zm = cloud->at(pmx, pmy).z;
-	const cv::Point pm = zm != zm ? ::median_point(p) : cv::Point(pmx, pmy);
-	const float zm_estimated = cloud->at(pm.x, pm.y).z;
-	const cv::Scalar color = isNan(zm_estimated) ? cv::Scalar(200) : cv::Scalar(0, 0, 200);
+	cv::Scalar color(200);
+	if (cloud->isValid(p[0].x, p[0].y) && cloud->isValid(p[1].x, p[1].y) && cloud->isValid(p[2].x, p[2].y)) {
+	    color = cv::Scalar(0, 0, 200);
+	    const auto pm = ::median_point(p);
+	    if (cloud->isValid(pm.x, pm.y))
+		cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
+	}
 	cv::line(output, p[0], p[1], color);
 	cv::line(output, p[1], p[2], color);
 	cv::line(output, p[0], p[2], color);
-	if (isNan(zm_estimated) == false)
-	    cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
+    } catch (const std::exception& e) {
+        std::cerr << __func__ << " exception: " << e.what() << std::endl;
+        continue;
     }
 }
 
@@ -299,7 +297,7 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
 	const int* tri_p = &p_->out.trianglelist[3 * i];
 	cv::Point p[3];
 	for (int j = 0; j < 3; ++j) {
-	    const double* ptr = &p_->out.pointlist[2 * tri_p[j]];
+	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
 	    p[j] = cv::Point(ptr[0], ptr[1]);
 	}
 	typedef pcl::RangeImagePlanar::PointType Point;
@@ -319,13 +317,14 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
 	    continue;
 	cv::Vec6i t;
 	for (int j = 0; j < 3; ++j) {
-	    const double* ptr = &p_->out.pointlist[2 * tri_p[j]];
+	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
 	    t[2 * j + 0] = ptr[0];
 	    t[2 * j + 1] = ptr[1];
 	}
 	triangles.push_back(t);
-    } catch (...) {
-	continue;
+    } catch (const std::exception& e) {
+        std::cerr << __func__ << " exception: " << e.what() << std::endl;
+        continue;
     }
     return triangles;
 }
