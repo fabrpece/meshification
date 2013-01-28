@@ -9,6 +9,7 @@ extern "C" {
 
 void xvr_receiver_init()
 {
+    Receiver::init();
     p.reset(new Receiver);
     p->start();
 }

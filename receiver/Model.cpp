@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <GL/glew.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -28,10 +29,17 @@ Model::~Model()
     glDeleteVertexArrays(1, vao);
 }
 
+void Model::init()
+{
+    const auto ret = ::glewInit();
+    if (ret != GLEW_OK)
+        throw std::runtime_error("Unable to initialize OpenGL extensions.");
+}
+
 void Model::draw() const
 {
     if (n_elements == 0)
-	return;
+        return;
     glBindVertexArray(vao[0]);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPushMatrix();
@@ -45,7 +53,7 @@ void Model::load(const Data3d& data)
 {
     n_elements = data.tri.size();
     if (n_elements == 0)
-	return;
+        return;
     std::copy(data.modelview, data.modelview + 16, model_matrix);
     glBindVertexArray(vao[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * data.tri.size(), data.tri.data(), GL_STATIC_DRAW);

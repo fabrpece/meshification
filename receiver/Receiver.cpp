@@ -66,6 +66,11 @@ Receiver::~Receiver()
     stop();
 }
 
+void Receiver::init()
+{
+    Model::init();
+}
+
 void Receiver::start()
 {
     is_running = true;

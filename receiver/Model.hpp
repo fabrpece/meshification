@@ -15,6 +15,7 @@ class Model
 public:
     Model();
     ~Model();
+    static void init();
     void draw() const;
     void load(const Data3d& data);
 };

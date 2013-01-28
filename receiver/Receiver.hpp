@@ -25,6 +25,7 @@ class Receiver
 public:
     Receiver();
     ~Receiver();
+    static void init();
     void start();
     void stop();
     void draw();
