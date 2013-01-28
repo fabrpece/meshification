@@ -40,6 +40,9 @@ void Model::draw() const
 {
     if (n_elements == 0)
         return;
+    GLint front_face;
+    glGetIntegerv(GL_FRONT_FACE, &front_face);
+    glFrontFace(GL_CW);
     glBindVertexArray(vao[0]);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPushMatrix();
@@ -47,6 +50,7 @@ void Model::draw() const
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glPopMatrix();
     glBindVertexArray(0);
+    glFrontFace(front_face);
 }
 
 void Model::load(const Data3d& data)
