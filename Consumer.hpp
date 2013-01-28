@@ -21,14 +21,29 @@
 
 #include <memory>
 #include <vector>
-#include <fstream>
 
 class VideoEncoder;
+namespace RakNet {
+class RakPeerInterface;
+class SystemAddress;
+}
+
+namespace aruco {
+class CameraParameters;
+class MarkerDetector;
+}
 
 class Consumer
 {
-    std::ofstream model_stream, rgb_stream;
     std::auto_ptr<VideoEncoder> encode;
+    RakNet::RakPeerInterface* peer;
+    std::auto_ptr<RakNet::SystemAddress> address;
+    bool is_connected = false;
+
+    std::unique_ptr<aruco::CameraParameters> cam_params;
+    std::unique_ptr<aruco::MarkerDetector> marker_detector;
+
+    void connect();
 
 public:
     Consumer(const int w, const int h);
