@@ -91,7 +91,7 @@ VideoEncoder::VideoEncoder(const int w, const int h) :
     cfg.g_w = w;
     cfg.g_h = h;
     cfg.rc_target_bitrate = 256;
-    cfg.g_threads = 4;
+    cfg.g_threads = 2;
     check(vpx_codec_enc_init(&p_->ctx, vpx_codec_vp8_cx(), &cfg, 0));
 }
 

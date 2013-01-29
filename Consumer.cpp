@@ -20,6 +20,8 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <chrono>
+#include <future>
 #include <RakNet/RakPeerInterface.h>
 #include <RakNet/RakNetTypes.h>
 #include <RakNet/MessageIdentifiers.h>
@@ -52,7 +54,9 @@ Consumer::~Consumer()
 
 void Consumer::connect()
 {
-    peer->Connect("10.100.38.180", 12345, 0, 0);
+    peer->Connect("127.0.0.1", 12345, 0, 0);
+    //peer->Connect("10.100.39.14", 12345, 0, 0);
+    //peer->Connect("10.100.38.180", 12345, 0, 0);
     //peer->Connect("10.100.32.186", 12345, 0, 0);
 }
 
@@ -96,57 +100,75 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     }
     if (is_connected == false)
         return;
-    std::vector<aruco::Marker> markers;
-    cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb));
-    marker_detector->detect(frame, markers, *cam_params, 0.197, false);
+    using clock = std::chrono::high_resolution_clock;
+    const auto t0 = clock::now();
+    auto video_future = std::async(std::launch::async, [this, rgb]() -> std::string {
+        const auto t0 = clock::now();
+        std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
+        (*encode)(video_stream, rgb);
+        video_stream << std::flush;
+        const std::string& ret = video_stream.str();
+        const auto t1 = clock::now();
+        //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
+        return ret;
+    });
     double modelview[16];
-    Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
-    mv_matrix.setIdentity();
-    for (auto& m : markers) {
-        if (m.id != 45)
-            continue;
-        m.draw(frame, cv::Scalar(255, 0, 0));
-        cv::Mat rot_src = m.Rvec.clone(), rot;
-        rot_src.at<float>(1, 0) *= -1.0f;
-        rot_src.at<float>(2, 0) *= -1.0f;
-        cv::Rodrigues(rot_src, rot);
-        Eigen::Matrix3d r = Eigen::Map<Eigen::Matrix3f>((float*)rot.ptr()).cast<double>();
-        Eigen::Vector3d t(-m.Tvec.at<float>(0, 0), m.Tvec.at<float>(1, 0), m.Tvec.at<float>(2, 0));
-        Eigen::Affine3d a = Eigen::Affine3d::Identity();
-        a.rotate(r).translate(t);
+    auto marker_feature = std::async(std::launch::async, [this, &modelview, rgb]() {
+        const auto t0 = clock::now();
+        std::vector<aruco::Marker> markers;
+        cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb));
+        marker_detector->detect(frame, markers, *cam_params, 0.197, false);
         Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
-        mv_matrix = a.matrix();
-    }
+        mv_matrix.setIdentity();
+        for (auto& m : markers) {
+            if (m.id != 45)
+                continue;
+            m.draw(frame, cv::Scalar(255, 0, 0));
+            cv::Mat rot_src = m.Rvec.clone(), rot;
+            rot_src.at<float>(1, 0) *= -1.0f;
+            rot_src.at<float>(2, 0) *= -1.0f;
+            cv::Rodrigues(rot_src, rot);
+            Eigen::Matrix3d r = Eigen::Map<Eigen::Matrix3f>((float*)rot.ptr()).cast<double>();
+            Eigen::Vector3d t(-m.Tvec.at<float>(0, 0), m.Tvec.at<float>(1, 0), m.Tvec.at<float>(2, 0));
+            Eigen::Affine3d a = Eigen::Affine3d::Identity();
+            a.rotate(r).translate(t);
+            Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
+            mv_matrix = a.matrix();
+        }
+        const auto t1 = clock::now();
+        //std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
+    });
+    const auto t1 = clock::now();
     const bool compression = true;
-    std::stringstream tmp(std::ios::in | std::ios::out | std::ios::binary);
+    std::stringstream model_stream(std::ios::in | std::ios::out | std::ios::binary);
     if (compression) {
-	tmp.put(1);
+        model_stream.put(1);
 	VBE::Writer compress(&tri[0], tri.size() / 3, ver.size() / 3, true);
 	compress.addAttrib(&ver[0], ver.size() / 3, 3, "V", 12);
-	compress(tmp);
+	compress(model_stream);
     } else {
-	tmp.put(0);
+        model_stream.put(0);
 	const int n_vertices = ver.size() / 3, n_triangles = tri.size() / 3;
-	tmp.write((const char*)&n_vertices, sizeof(n_vertices));
-	tmp.write((const char*)&ver[0], ver.size() * sizeof(float));
-	tmp.write((const char*)&n_triangles, sizeof(n_triangles));
-	tmp.write((const char*)&tri[0], tri.size() * sizeof(unsigned));
+	model_stream.write((const char*)&n_vertices, sizeof(n_vertices));
+	model_stream.write((const char*)&ver[0], ver.size() * sizeof(float));
+	model_stream.write((const char*)&n_triangles, sizeof(n_triangles));
+	model_stream.write((const char*)&tri[0], tri.size() * sizeof(unsigned));
     }
-    tmp << std::flush;
-    const int model_size = tmp.tellp();
-    const std::string& model_string = tmp.str();
-    tmp.str("");
-    (*encode)(tmp, rgb);
-    tmp << std::flush;
-    const int video_size = tmp.tellp();
-    const std::string& video_string = tmp.str();
+    model_stream << std::flush;
+    const std::string& model_string = model_stream.str();
+    const auto t2 = clock::now();
+    marker_feature.wait();
+    const std::string& video_string = video_future.get();
+    const auto t3 = clock::now();
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_ENUM));
     network_stream.Write(modelview);
-    network_stream.Write(model_size);
-    network_stream.Write(model_string.c_str(), model_size);
-    network_stream.Write(video_size);
-    network_stream.Write(video_string.c_str(), video_size);
-    peer->Send(&network_stream, HIGH_PRIORITY, UNRELIABLE, 0, *address, false);
+    network_stream.Write(static_cast<int>(model_string.size()));
+    network_stream.Write(model_string.data(), model_string.size());
+    network_stream.Write(static_cast<int>(video_string.size()));
+    network_stream.Write(video_string.data(), video_string.size());
+    peer->Send(&network_stream, MEDIUM_PRIORITY, UNRELIABLE, 0, *address, false);
+    const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
+    //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
 }
