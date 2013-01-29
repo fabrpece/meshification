@@ -51,7 +51,7 @@ try {
     if (cloud->isValid(xm, ym) == false && cloud->isValid(x0, y0) == false && cloud->isValid(x1, y1) == false && cloud->isValid(x2, y2) == false)
         return 0;
     if (cloud->isValid(xm, ym) == false || cloud->isValid(x0, y0) == false || cloud->isValid(x1, y1) == false || cloud->isValid(x2, y2) == false)
-        return 1;
+        return area > 50;
     const auto p03 = cloud->getEigenVector3f(x0, y0);
     const auto p13 = cloud->getEigenVector3f(x1, y1);
     const auto p23 = cloud->getEigenVector3f(x2, y2);
