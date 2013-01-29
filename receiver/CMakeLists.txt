@@ -1,8 +1,12 @@
 find_package(OpenGL REQUIRED)
 find_library(VPX_LIBRARY vpx)
-find_library(GLEW_LIBRARY glew32)
+find_library(GLEW_LIBRARY NAMES GLEW glew32)
 
-add_library(receiver SHARED
+if (WIN32)
+    set(RECEIVER_LIBRARY_TYPE SHARED)
+endif()
+
+add_library(receiver ${RECEIVER_LIBRARY_TYPE}
 xvr_receiver.h xvr_receiver.cpp
 Receiver.hpp Receiver.cpp
 VideoDecoder.hpp VideoDecoder.cpp
