@@ -11,6 +11,7 @@ xvr_receiver.h xvr_receiver.cpp
 Receiver.hpp Receiver.cpp
 VideoDecoder.hpp VideoDecoder.cpp
 Model.hpp Model.cpp
+StaticModel.hpp StaticModel.cpp
 Data3d.hpp)
 
 target_link_libraries(receiver ${RAKNET_LIBRARY} ${VPX_LIBRARY} 3dzip ${PCL_LIBRARIES} ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY})

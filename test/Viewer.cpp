@@ -45,6 +45,7 @@ void Viewer::init()
     startAnimation();
 
     xvr_receiver_init();
+    xvr_receiver_load_static("test2.ply");
 }
 
 void Viewer::draw()
