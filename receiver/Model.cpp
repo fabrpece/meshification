@@ -49,6 +49,7 @@ void Model::draw() const
     glMultMatrixf(model_matrix);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
     glFrontFace(front_face);
 }
