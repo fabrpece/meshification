@@ -113,8 +113,9 @@ try {
 	if (c == 27) {
 	    break;
 	} else if (c == 's') {
-	    std::ostringstream off_filename;
-	    off_filename << "mesh_" << std::setw(4) << std::setfill('0') << frame_id << ".off";
+	    std::ostringstream img_filename;
+	    img_filename << "img" << std::setw(4) << std::setfill('0') << frame_id << ".jpg";
+	    cv::imwrite(img_filename.str(), img_color);
 	    //m.write(off_filename.str());
 	} else if (c == 32)
 	    is_animated = 1 - is_animated;
