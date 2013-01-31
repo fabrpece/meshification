@@ -300,6 +300,10 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
 	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
 	    p[j] = cv::Point(ptr[0], ptr[1]);
 	}
+	if (cloud->isValid(p[0].x, p[0].y) == false ||
+		cloud->isValid(p[1].x, p[1].y) == false ||
+		cloud->isValid(p[2].x, p[2].y) == false)
+	    continue;
 	typedef pcl::RangeImagePlanar::PointType Point;
 	const Point p03 = cloud->at(p[0].x, p[0].y);
 	const Point p13 = cloud->at(p[1].x, p[1].y);
@@ -310,6 +314,8 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
 	pm3.z = (p03.z + p13.z + p23.z) / 3.0f;
 	int pmx, pmy;
 	cloud->getImagePoint(pm3.x, pm3.y, pm3.z, pmx, pmy);
+	if (cloud->isValid(pmx, pmy) == false)
+	    continue;
 	const float zm = cloud->at(pmx, pmy).z;
 	const cv::Point pm = zm != zm ? ::median_point(p) : cv::Point(pmx, pmy);
 	const float zm_estimated = cloud->at(pm.x, pm.y).z;
