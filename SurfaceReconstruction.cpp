@@ -55,8 +55,8 @@ static void extend_edge(std::vector<cv::Point>& tri, std::vector<cv::Point>& new
     for (int j = 0; j < 2; ++j)
 	new_tri[1 - j] = intersect(tri[j], tri[2], depth);
     std::vector<double> diagonal(2);
-    diagonal[0] = cv::norm(depth.at<u_short>(tri[0]) - depth.at<u_short>(new_tri[0]));
-    diagonal[1] = cv::norm(depth.at<u_short>(tri[1]) - depth.at<u_short>(new_tri[1]));
+    diagonal[0] = cv::norm(depth.at<unsigned short>(tri[0]) - depth.at<unsigned short>(new_tri[0]));
+    diagonal[1] = cv::norm(depth.at<unsigned short>(tri[1]) - depth.at<unsigned short>(new_tri[1]));
     if (diagonal[0] < diagonal[1]) {
 	tri[2] = new_tri[0];
 	new_tri[2] = tri[0];
