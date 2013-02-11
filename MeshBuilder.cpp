@@ -56,7 +56,7 @@ void MeshBuilder::insert(const std::vector<cv::Point>& p)
     for (int i = 0; i < 3; ++i) {
 	idx[i] = indices_.at<short>(p[i]);
 	if (idx[i] == -1) {
-	    pcl::RangeImagePlanar::PointType p3d = p_->cloud->at(p[i].x, p[i].y);
+	    const auto p3d = p_->cloud->at(p[i].x, p[i].y);
 	    ver_.push_back(p3d.x);
 	    ver_.push_back(-p3d.y);
 	    ver_.push_back(-p3d.z);

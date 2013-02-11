@@ -188,11 +188,12 @@ Triangulator::Triangulator(const cv::Mat& depth, double min_area, double depth_c
     ::min_area = min_area_;
     ::depth_coefficient = depth_coefficient_;
     cv::Size size = depth.size();
-    std::vector<cv::Point> frame;
-    frame.push_back(cv::Point(0, 0));
-    frame.push_back(cv::Point(size.width - 1, 0));
-    frame.push_back(cv::Point(size.width - 1, size.height - 1));
-    frame.push_back(cv::Point(0, size.height - 1));
+    std::vector<cv::Point> frame {
+        cv::Point(0, 0),
+        cv::Point(size.width - 1, 0),
+        cv::Point(size.width - 1, size.height - 1),
+        cv::Point(0, size.height - 1)
+    };
     add_contour(frame);
 
     //p_->cloud->setDepthImage(depth.ptr<unsigned short>(), size.width, size.height, size.width / 2, size.height / 2, 1884.19, 1887.49);
@@ -295,33 +296,16 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
     triangles.reserve(p_->out.numberoftriangles);
     for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
 	const int* tri_p = &p_->out.trianglelist[3 * i];
-	cv::Point p[3];
+	cv::Point2f p[3];
 	for (int j = 0; j < 3; ++j) {
 	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
-	    p[j] = cv::Point(ptr[0], ptr[1]);
+	    p[j] = cv::Point2f(ptr[0], ptr[1]);
 	}
-	if (cloud->isValid(p[0].x, p[0].y) == false ||
-		cloud->isValid(p[1].x, p[1].y) == false ||
+	if (cloud->isValid(p[0].x, p[0].y) == false &&
+		cloud->isValid(p[1].x, p[1].y) == false &&
 		cloud->isValid(p[2].x, p[2].y) == false)
 	    continue;
-	typedef pcl::RangeImagePlanar::PointType Point;
-	const Point p03 = cloud->at(p[0].x, p[0].y);
-	const Point p13 = cloud->at(p[1].x, p[1].y);
-	const Point p23 = cloud->at(p[2].x, p[2].y);
-	Point pm3;
-	pm3.x = (p03.x + p13.x + p23.x) / 3.0f;
-	pm3.y = (p03.y + p13.y + p23.y) / 3.0f;
-	pm3.z = (p03.z + p13.z + p23.z) / 3.0f;
-	int pmx, pmy;
-	cloud->getImagePoint(pm3.x, pm3.y, pm3.z, pmx, pmy);
-	if (cloud->isValid(pmx, pmy) == false)
-	    continue;
-	const float zm = cloud->at(pmx, pmy).z;
-	const cv::Point pm = zm != zm ? ::median_point(p) : cv::Point(pmx, pmy);
-	const float zm_estimated = cloud->at(pm.x, pm.y).z;
-	if (isNan(zm_estimated) == true)
-	    continue;
-	cv::Vec6i t;
+	cv::Vec6f t;
 	for (int j = 0; j < 3; ++j) {
 	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
 	    t[2 * j + 0] = ptr[0];

@@ -32,7 +32,7 @@ static bool is_joinable(const cv::Point& p1, const cv::Point& p2, const cv::Mat&
 	return false;
     //return true;
     const unsigned short depth_diff = std::abs(depth.at<ushort>(p1) - depth.at<ushort>(p2));
-    return depth_diff < 200;
+    return depth_diff < 150;
 }
 
 static cv::Point intersect(const cv::Point& p1, const cv::Point& p2, const cv::Mat& depth)
