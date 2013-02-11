@@ -42,6 +42,7 @@ class Consumer
 
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
+    double modelview[16];
 
     void connect();
 

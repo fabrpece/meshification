@@ -45,6 +45,8 @@ Consumer::Consumer(const int w, const int h) :
     peer->Startup(1, &socket, 1);
     connect();
     cam_params->readFromXMLFile("cam.yml");
+    Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
+    mv_matrix.setIdentity();
 }
 
 Consumer::~Consumer()
@@ -112,18 +114,16 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
         return ret;
     });
-    double modelview[16];
-    auto marker_feature = std::async(std::launch::async, [this, &modelview, rgb]() {
+    auto marker_feature = std::async(std::launch::async, [this, rgb]() {
         const auto t0 = clock::now();
         std::vector<aruco::Marker> markers;
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb));
-        marker_detector->detect(frame, markers, *cam_params, 0.197, false);
-        Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
-        mv_matrix.setIdentity();
+        //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
+        marker_detector->detect(frame, markers, *cam_params, 0.288, false);
         for (auto& m : markers) {
-            if (m.id != 45)
-                continue;
             m.draw(frame, cv::Scalar(255, 0, 0));
+            if (m.id != 1)
+                continue;
             cv::Mat rot_src = m.Rvec.clone(), rot;
             rot_src.at<float>(1, 0) *= -1.0f;
             rot_src.at<float>(2, 0) *= -1.0f;
