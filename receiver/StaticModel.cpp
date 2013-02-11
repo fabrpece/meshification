@@ -4,7 +4,6 @@
 #include <GL/glew.h>
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
-//#include <pcl/io/ply_io.h>
 #include <Eigen/Core>
 #include "StaticModel.hpp"
 
@@ -44,8 +43,6 @@ void StaticModel::load(const char *fname)
         reader.read(fname, cloud);
     }
     else if(getFileExtension(fname) == "ply") {
-        //pcl::PLYReader reader;
-        //reader.read(fname.c_str(), *cloud);
         readPly(fname, cloud, modelview);
     }
 

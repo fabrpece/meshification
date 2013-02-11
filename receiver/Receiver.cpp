@@ -114,7 +114,6 @@ void Receiver::run()
             RakNet::BitStream bs(p->data, p->length, false);
             bs.IgnoreBytes(sizeof(RakNet::MessageID));
             bs.Read(data->modelview);
-            Eigen::Map<Eigen::Matrix4d> mv_matrix(data->modelview);
             int size;
             bs.Read(size);
             buffer.resize(size);
