@@ -10,6 +10,6 @@ public:
 
 private:
     int n_vertices;
-    unsigned vbo[2];
+    unsigned vao[1], vbo[2];
     float modelview[16];
 };

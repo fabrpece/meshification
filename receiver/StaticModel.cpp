@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/io/ply_io.h>
+//#include <pcl/io/ply_io.h>
 #include <Eigen/Core>
 #include "StaticModel.hpp"
 
@@ -21,12 +21,14 @@ StaticModel::StaticModel() :
 {
     Eigen::Map<Eigen::Matrix4f> mv(modelview);
     mv.setIdentity();
+    glGenVertexArrays(1, vao);
     glGenBuffers(2, vbo);
 }
 
 StaticModel::~StaticModel()
 {
     glDeleteBuffers(2, vbo);
+    glDeleteVertexArrays(1, vao);
 }
 
 static
@@ -68,11 +70,17 @@ void StaticModel::load(const char *fname)
         ++k;
     }
 
+    glBindVertexArray(vao[0]);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  cloud.points.size() * 3, &VBO_cloud_pos[0], GL_STATIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, 0,0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLbyte) * cloud.points.size() * 3, &VBO_cloud_cols[0], GL_STATIC_DRAW);
+    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 void StaticModel::draw()
@@ -84,16 +92,9 @@ void StaticModel::draw()
         glDisable(GL_LIGHTING);
     glPushMatrix();
     glMultMatrixf(modelview);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glVertexPointer(3, GL_FLOAT, 0,0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(vao[0]);
     glDrawArrays(GL_POINTS, 0, n_vertices);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindVertexArray(0);
     glPopMatrix();
     if (lighting_state == GL_TRUE)
         glEnable(GL_LIGHTING);
