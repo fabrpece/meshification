@@ -27,6 +27,7 @@
 #include "SourceOni.hpp"
 #include "Consumer.hpp"
 #include "DepthMeshifier.hpp"
+#include "AsyncOperation.hpp"
 
 void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& size)
 {
@@ -89,24 +90,27 @@ try {
     bool is_2d_draw_enabled = false, use_color_edges = true;
     Consumer consume(width, height);
     char buffer_depth[2 * width * height];
-    char buffer_rgb[3 * width * height];
+    std::vector<char> buffer_rgb(3 * width * height);
     std::vector<unsigned> tri;
     std::vector<float> ver;
     std::vector<unsigned short> decompressed_buffer(width * height);
+    AsyncOperation consumer_thread;
     for (int frame_id = 0;; ++frame_id) {
-        camera->grab(buffer_rgb, buffer_depth);
+        camera->grab(buffer_rgb.data(), buffer_depth);
         int64_t t_begin = cv::getTickCount();
-        meshify(buffer_rgb, buffer_depth, tri, ver);
+        meshify(buffer_rgb.data(), buffer_depth, tri, ver);
         if (tri.empty())
             continue;
-        consume(ver, tri, buffer_rgb);
+        consumer_thread.begin([=, &consume]{
+            consume(ver, tri, buffer_rgb);
+        });
         const double t = (cv::getTickCount() - t_begin) / cv::getTickFrequency() * 1000.0;
         //decompressed_stream.read((char*)&decompressed_buffer[0], width * height * 2);
         //::compare(buffer_depth, &decompressed_buffer[0], cv::Size(width, height));
         std::ostringstream label;
         label << "Frame: " << frame_id <<  " #T: " << tri.size() / 3 << ' ' << t << "ms";
         cv::displayStatusBar(win, label.str(), 0);
-        cv::Mat img_color(height, width, CV_8UC3, buffer_rgb);
+        cv::Mat img_color(height, width, CV_8UC3, buffer_rgb.data());
         cv::cvtColor(img_color, img_color, CV_RGB2BGR);
         cv::imshow(win, img_color);
         const int c = cv::waitKey(is_animated);
@@ -116,7 +120,6 @@ try {
             std::ostringstream img_filename;
             img_filename << "img" << std::setw(4) << std::setfill('0') << frame_id << ".jpg";
             cv::imwrite(img_filename.str(), img_color);
-            //m.write(off_filename.str());
         } else if (c == 32)
             is_animated = 1 - is_animated;
         else if (c == 'd') {

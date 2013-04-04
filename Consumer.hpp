@@ -51,5 +51,5 @@ class Consumer
 public:
     Consumer(const int w, const int h);
     ~Consumer();
-    void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const char* rgb);
+    void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
 };

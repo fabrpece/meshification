@@ -65,7 +65,7 @@ void Consumer::connect()
     //peer->Connect("10.100.32.186", 12345, 0, 0);
 }
 
-void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const char* rgb)
+void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb)
 {
     auto packet_deleter = [this](RakNet::Packet* p) {
         peer->DeallocatePacket(p);
@@ -111,7 +111,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     async_video->begin([this, rgb, &video_string] {
         const auto t0 = clock::now();
         std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
-        (*encode)(video_stream, rgb);
+        (*encode)(video_stream, rgb.data());
         video_stream << std::flush;
         video_string = video_stream.str();
         const auto t1 = clock::now();
@@ -120,7 +120,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     async_marker->begin([this, rgb] {
         const auto t0 = clock::now();
         std::vector<aruco::Marker> markers;
-        cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb));
+        cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
         //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
         marker_detector->detect(frame, markers, *cam_params, 0.288, false);
         for (auto& m : markers) {
