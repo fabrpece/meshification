@@ -18,6 +18,7 @@ add_executable(main main.cpp
 	MeshBuilder.hpp MeshBuilder.cpp
 	Consumer.hpp Consumer.cpp
 	VideoEncoder.hpp VideoEncoder.cpp
+        AsyncOperation.hpp AsyncOperation.cpp
 	SourceRaw.hpp SourceRaw.cpp
 	SourceKinect.hpp SourceKinect.cpp
 	SourceOni.hpp SourceOni.cpp

@@ -32,9 +32,12 @@
 #include <Eigen/Dense>
 #include "Consumer.hpp"
 #include "VideoEncoder.hpp"
+#include "AsyncOperation.hpp"
 #include "3dzip/3dzip/Writer.hh"
 
 Consumer::Consumer(const int w, const int h) :
+    async_video(new AsyncOperation),
+    async_marker(new AsyncOperation),
     encode(new VideoEncoder(w, h)),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
@@ -104,17 +107,17 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         return;
     using clock = std::chrono::high_resolution_clock;
     const auto t0 = clock::now();
-    auto video_future = std::async(std::launch::async, [this, rgb]() -> std::string {
+    std::string video_string;
+    async_video->begin([this, rgb, &video_string] {
         const auto t0 = clock::now();
         std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
         (*encode)(video_stream, rgb);
         video_stream << std::flush;
-        const std::string& ret = video_stream.str();
+        video_string = video_stream.str();
         const auto t1 = clock::now();
-        //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
-        return ret;
+        std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
     });
-    auto marker_feature = std::async(std::launch::async, [this, rgb]() {
+    async_marker->begin([this, rgb] {
         const auto t0 = clock::now();
         std::vector<aruco::Marker> markers;
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb));
@@ -136,7 +139,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             mv_matrix = a.matrix();
         }
         const auto t1 = clock::now();
-        //std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
+        std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
     });
     const auto t1 = clock::now();
     const bool compression = true;
@@ -157,8 +160,8 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     model_stream << std::flush;
     const std::string& model_string = model_stream.str();
     const auto t2 = clock::now();
-    marker_feature.wait();
-    const std::string& video_string = video_future.get();
+    async_marker->end();
+    async_video->end();
     const auto t3 = clock::now();
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_ENUM));
@@ -170,5 +173,5 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     peer->Send(&network_stream, MEDIUM_PRIORITY, UNRELIABLE, 0, *address, false);
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
-    //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
+    std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
 }
