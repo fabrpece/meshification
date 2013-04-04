@@ -28,8 +28,8 @@
 using namespace cv;
 
 void my_canny( InputArray _src, OutputArray _dst,
-                double low_thresh, double high_thresh,
-                int aperture_size, bool L2gradient )
+               double low_thresh, double high_thresh,
+               int aperture_size, bool L2gradient )
 {
     Mat src = _src.getMat();
     CV_Assert( src.depth() == CV_8U );
@@ -103,8 +103,8 @@ void my_canny( InputArray _src, OutputArray _dst,
         3   2   1
     */
 
-    #define CANNY_PUSH(d)    *(d) = uchar(2), *stack_top++ = (d)
-    #define CANNY_POP(d)     (d) = *--stack_top
+#define CANNY_PUSH(d)    *(d) = uchar(2), *stack_top++ = (d)
+#define CANNY_POP(d)     (d) = *--stack_top
 
     // calculate magnitude and angle of gradient, perform non-maxima supression.
     // fill the map with one of the following values:
@@ -174,7 +174,7 @@ void my_canny( InputArray _src, OutputArray _dst,
         int prev_flag = 0;
         for (int j = 0; j < src.cols; j++)
         {
-            #define CANNY_SHIFT 15
+#define CANNY_SHIFT 15
             const int TG22 = (int)(0.4142135623730950488016887242097*(1<<CANNY_SHIFT) + 0.5);
 
             int m = _mag[j];
@@ -308,19 +308,19 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     cv::Mat depth(height, width, CV_16UC1, buffer_depth), depth8(height, width, CV_8UC1);
     unsigned short depth_min = std::numeric_limits<unsigned short>::max(), depth_max = 0;
     for (int i = 0; i < width * height; ++i) {
-	unsigned short& d = depth.at<unsigned short>(i);
-	d = (d < near_plane || d > far_plane) ? 0 : d;
-	if (d == 0)
-	    continue;
-	depth_min = std::min(d, depth_min);
-	depth_max = std::max(d, depth_max);
+        unsigned short& d = depth.at<unsigned short>(i);
+        d = (d < near_plane || d > far_plane) ? 0 : d;
+        if (d == 0)
+            continue;
+        depth_min = std::min(d, depth_min);
+        depth_max = std::max(d, depth_max);
     }
     const double alpha = 250.0 / (depth_max - depth_min);
     const double beta = -depth_min * alpha + 5;
     for (int i = 0; i < width * height; ++i) {
-	const unsigned short& s = depth.at<unsigned short>(i);
-	unsigned char& c = depth8.at<unsigned char>(i);
-	c = s == 0 ? 0 : (s * alpha + beta);
+        const unsigned short& s = depth.at<unsigned short>(i);
+        unsigned char& c = depth8.at<unsigned char>(i);
+        c = s == 0 ? 0 : (s * alpha + beta);
     }
     cv::Mat mask(height, width, CV_8UC1);
     cv::threshold(depth8, mask, 0, 255, CV_THRESH_BINARY);
@@ -330,48 +330,48 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     //my_canny(depth8, depth8, min_threshold, max_threshold, 3, true);
     cv::bitwise_or(depth8, internal_edges, depth8, mask);
     if (use_color_edges) {
-	cv::Mat img_gray;
-	cv::cvtColor(img_color, img_gray, CV_RGB2GRAY);
-	cv::blur(img_gray, img_gray, cv::Size(3, 3));
-	cv::Canny(img_gray, img_gray, min_threshold, max_threshold, 3, true);
-	cv::bitwise_or(depth8, img_gray, depth8, mask);
+        cv::Mat img_gray;
+        cv::cvtColor(img_color, img_gray, CV_RGB2GRAY);
+        cv::blur(img_gray, img_gray, cv::Size(3, 3));
+        cv::Canny(img_gray, img_gray, min_threshold, max_threshold, 3, true);
+        cv::bitwise_or(depth8, img_gray, depth8, mask);
     }
     cv::dilate(depth8, depth8, cv::Mat(), cv::Point(-1, -1), dilate_erode_steps);
     cv::erode(depth8, depth8, cv::Mat(), cv::Point(-1, -1), dilate_erode_steps);
     if (false)
-	cv::imshow("Edge detection", depth8);
+        cv::imshow("Edge detection", depth8);
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(depth8, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     Triangulator triangulate(depth, min_area, depth_threshold);
     for (unsigned i = 0; i < contours.size(); ++i) {
-	std::vector<cv::Point>& c = contours[i];
-	cv::approxPolyDP(c, c, approx_polygon / 1000.0, true);
-	if (cv::contourArea(c) < min_contour_area)
-	    continue;
-	triangulate.add_contour(c);
+        std::vector<cv::Point>& c = contours[i];
+        cv::approxPolyDP(c, c, approx_polygon / 1000.0, true);
+        if (cv::contourArea(c) < min_contour_area)
+            continue;
+        triangulate.add_contour(c);
     }
     if (false) {
-	cv::Mat image_contours = cv::Mat::zeros(depth.size(), CV_8UC1);
-	cv::drawContours(image_contours, contours, -1, cv::Scalar(255));
-	cv::imshow("Contours", image_contours);
+        cv::Mat image_contours = cv::Mat::zeros(depth.size(), CV_8UC1);
+        cv::drawContours(image_contours, contours, -1, cv::Scalar(255));
+        cv::imshow("Contours", image_contours);
     }
     triangulate();
     if (is_draw_2d_enabled)
-	triangulate.draw(img_color);
+        triangulate.draw(img_color);
     const std::vector<cv::Vec6f> triangles = triangulate.get_triangles();
     if (triangles.empty())
-	return;
+        return;
     SurfaceReconstruction recon;
     recon(triangles, depth);
     const MeshBuilder& m = recon.mesh();
     tri = m.get_triangles();
     ver = m.get_vertices();
     if (false) {
-	cv::Mat mask_rgb;
-	cv::cvtColor(mask, mask_rgb, CV_GRAY2BGR);
-	triangulate.draw(mask_rgb);
-	cv::cvtColor(mask_rgb, mask_rgb, CV_RGB2BGR);
-	cv::imshow("Mask", mask_rgb);
+        cv::Mat mask_rgb;
+        cv::cvtColor(mask, mask_rgb, CV_GRAY2BGR);
+        triangulate.draw(mask_rgb);
+        cv::cvtColor(mask_rgb, mask_rgb, CV_RGB2BGR);
+        cv::imshow("Mask", mask_rgb);
     }
 }

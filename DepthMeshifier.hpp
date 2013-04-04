@@ -44,9 +44,9 @@ public:
     ~DepthMeshifier();
     void operator()(char* buffer_rgb, char* buffer_depth, std::vector<unsigned>& tri, std::vector<float>& ver);
     void enable_2d_draw(bool enabled = true) {
-	is_draw_2d_enabled = enabled;
+        is_draw_2d_enabled = enabled;
     }
     void enable_color_edges(bool enabled = true) {
-	use_color_edges = enabled;
+        use_color_edges = enabled;
     }
 };

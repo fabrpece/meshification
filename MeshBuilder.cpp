@@ -51,18 +51,18 @@ MeshBuilder::~MeshBuilder()
 void MeshBuilder::insert(const std::vector<cv::Point>& p)
 {
     if (p[0] == p[1] || p[1] == p[2] || p[0] == p[2])
-	return;
+        return;
     std::vector<unsigned> idx(3);
     for (int i = 0; i < 3; ++i) {
-	idx[i] = indices_.at<short>(p[i]);
-	if (idx[i] == -1) {
-	    const auto p3d = p_->cloud->at(p[i].x, p[i].y);
-	    ver_.push_back(p3d.x);
-	    ver_.push_back(-p3d.y);
-	    ver_.push_back(-p3d.z);
-	    idx[i] = ver_.size() / 3 - 1;
-	    indices_.at<short>(p[i]) = idx[i];
-	}
+        idx[i] = indices_.at<short>(p[i]);
+        if (idx[i] == -1) {
+            const auto p3d = p_->cloud->at(p[i].x, p[i].y);
+            ver_.push_back(p3d.x);
+            ver_.push_back(-p3d.y);
+            ver_.push_back(-p3d.z);
+            idx[i] = ver_.size() / 3 - 1;
+            indices_.at<short>(p[i]) = idx[i];
+        }
     }
     std::copy(idx.begin(), idx.end(), std::back_insert_iterator<std::vector<unsigned> >(tri_));
 }
@@ -71,17 +71,17 @@ void MeshBuilder::write(std::ostream& out) const
 {
     out << "OFF\n" << ver_.size() / 3 << ' ' << tri_.size() / 3 << " 0\n";
     for (std::size_t i = 0; i < ver_.size() / 3; ++i)
-	out << ver_[3 * i + 0] << ' ' << ver_[3 * i + 1] << ' ' << ver_[3 * i + 2] << '\n';
+        out << ver_[3 * i + 0] << ' ' << ver_[3 * i + 1] << ' ' << ver_[3 * i + 2] << '\n';
     for (std::size_t i = 0; i < tri_.size() / 3; ++i)
-	out << "3 " << tri_[3 * i + 2] << ' ' << tri_[3 * i + 1] << ' ' << tri_[3 * i + 0] << '\n';
+        out << "3 " << tri_[3 * i + 2] << ' ' << tri_[3 * i + 1] << ' ' << tri_[3 * i + 0] << '\n';
 }
 
 void MeshBuilder::write(const std::string& filename) const
 {
     std::ofstream out(filename.c_str());
     if (out.is_open() == false) {
-	std::cerr << "Unable to write to " << filename << std::endl;
-	return;
+        std::cerr << "Unable to write to " << filename << std::endl;
+        return;
     }
     write(out);
 }

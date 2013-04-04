@@ -29,21 +29,21 @@ static void rgb2yuv(vpx_image_t *raw, int sx, int sy, const unsigned char *sourc
     unsigned int i, j;
     unsigned int offset1;
     unsigned int offset2;
-    for (j = 0; j < sy; ++j) 
-	for (i = 0; i < sx; ++i) {
-	    raw->planes[0][i+j*sx]=((int)(114*source[3*(i+j*sx)])+(int)(587*source[3*(i+j*sx)+1])+(int)(299*source[3*(i+j*sx)+2]))>>10;;
-	}
+    for (j = 0; j < sy; ++j)
+        for (i = 0; i < sx; ++i) {
+            raw->planes[0][i+j*sx]=((int)(114*source[3*(i+j*sx)])+(int)(587*source[3*(i+j*sx)+1])+(int)(299*source[3*(i+j*sx)+2]))>>10;;
+        }
 
     int u, v = 0;
     int a = 0;
     for (j = 0;j < sy; j = j + 2) //This loop samples each 2 pixels (both in X and Y)
-	for (i = 0; i < sx; i = i + 2) {
-	    offset1=3*(i+j*sx);
-	    u=(((500*source[offset1]) - (419*source[offset1+1]) - (81*source[offset1+2])+128000)>>10); 
-	    v=((-(169*source[offset1]) - (331*source[offset1+1]) + (500*source[offset1+2])+128000)>>10);
-	    raw->planes[1][a]=u;
-	    raw->planes[2][a++]=v;
-	}
+        for (i = 0; i < sx; i = i + 2) {
+            offset1=3*(i+j*sx);
+            u=(((500*source[offset1]) - (419*source[offset1+1]) - (81*source[offset1+2])+128000)>>10);
+            v=((-(169*source[offset1]) - (331*source[offset1+1]) + (500*source[offset1+2])+128000)>>10);
+            raw->planes[1][a]=u;
+            raw->planes[2][a++]=v;
+        }
 }
 
 class Frame
@@ -51,23 +51,23 @@ class Frame
     vpx_image_t frame;
 public:
     Frame(const int w, const int h) {
-	vpx_img_alloc(&frame, VPX_IMG_FMT_YV12, w, h, 0);
+        vpx_img_alloc(&frame, VPX_IMG_FMT_YV12, w, h, 0);
     }
     vpx_image_t* get() {
-	return &frame;
+        return &frame;
     }
     ~Frame() {
-	vpx_img_free(&frame);
+        vpx_img_free(&frame);
     }
     Frame& operator=(const char* buffer) {
-	::rgb2yuv(&frame, 640, 480, (const unsigned char*)buffer);
+        ::rgb2yuv(&frame, 640, 480, (const unsigned char*)buffer);
     }
 };
 
 inline static void check(const vpx_codec_err_t& err)
 {
     if (err)
-	throw std::runtime_error(vpx_codec_err_to_string(err));
+        throw std::runtime_error(vpx_codec_err_to_string(err));
 }
 
 struct VideoEncoder::Impl
@@ -75,7 +75,7 @@ struct VideoEncoder::Impl
     vpx_codec_ctx_t ctx;
     Frame frame;
     Impl(const int w, const int h) :
-	frame(w, h)
+        frame(w, h)
     {}
 };
 
@@ -99,7 +99,7 @@ VideoEncoder::~VideoEncoder()
 {
     vpx_codec_err_t err = vpx_codec_destroy(&p_->ctx);
     if (err)
-	std::cerr << "Error destroying VP8 encoder context: " << vpx_codec_err_to_string(err) << std::endl;
+        std::cerr << "Error destroying VP8 encoder context: " << vpx_codec_err_to_string(err) << std::endl;
     delete p_;
 }
 
@@ -110,10 +110,10 @@ void VideoEncoder::operator()(std::ostream& out, const char* buffer)
     const vpx_codec_cx_pkt_t* pkt;
     vpx_codec_iter_t iter = 0;
     while (pkt = vpx_codec_get_cx_data(&p_->ctx, &iter)) {
-	if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
-	    const unsigned size = pkt->data.frame.sz;
-	    out.write((const char*)&size, sizeof(size));
-	    out.write((const char*)pkt->data.frame.buf, size);
-	}
+        if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
+            const unsigned size = pkt->data.frame.sz;
+            out.write((const char*)&size, sizeof(size));
+            out.write((const char*)pkt->data.frame.buf, size);
+        }
     }
 }

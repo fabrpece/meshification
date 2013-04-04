@@ -25,7 +25,7 @@ SourceKinect::SourceKinect(const int id) :
     kinect(new cv::VideoCapture(CV_CAP_OPENNI + id))
 {
     if (kinect->isOpened() == false)
-	throw std::runtime_error("Unable to open the Kinect device");
+        throw std::runtime_error("Unable to open the Kinect device");
 }
 
 SourceKinect::~SourceKinect()

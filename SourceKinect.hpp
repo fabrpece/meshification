@@ -22,7 +22,7 @@
 #include "Source.hpp"
 
 namespace cv {
-    class VideoCapture;
+class VideoCapture;
 }
 
 class SourceKinect : public Source

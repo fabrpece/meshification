@@ -22,10 +22,10 @@
 #include "Source.hpp"
 
 namespace xn {
-    class Context;
-    class DepthGenerator;
-    class ImageGenerator;
-    class Player;
+class Context;
+class DepthGenerator;
+class ImageGenerator;
+class Player;
 }
 
 class SourceOni : public Source

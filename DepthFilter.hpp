@@ -22,7 +22,7 @@
 #include <memory>
 
 namespace cv {
-    class Mat;
+class Mat;
 }
 
 class DepthFilter

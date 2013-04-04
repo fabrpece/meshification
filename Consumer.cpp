@@ -146,16 +146,16 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     std::stringstream model_stream(std::ios::in | std::ios::out | std::ios::binary);
     if (compression) {
         model_stream.put(1);
-	VBE::Writer compress(&tri[0], tri.size() / 3, ver.size() / 3, true);
-	compress.addAttrib(&ver[0], ver.size() / 3, 3, "V", 12);
-	compress(model_stream);
+        VBE::Writer compress(&tri[0], tri.size() / 3, ver.size() / 3, true);
+        compress.addAttrib(&ver[0], ver.size() / 3, 3, "V", 12);
+        compress(model_stream);
     } else {
         model_stream.put(0);
-	const int n_vertices = ver.size() / 3, n_triangles = tri.size() / 3;
-	model_stream.write((const char*)&n_vertices, sizeof(n_vertices));
-	model_stream.write((const char*)&ver[0], ver.size() * sizeof(float));
-	model_stream.write((const char*)&n_triangles, sizeof(n_triangles));
-	model_stream.write((const char*)&tri[0], tri.size() * sizeof(unsigned));
+        const int n_vertices = ver.size() / 3, n_triangles = tri.size() / 3;
+        model_stream.write((const char*)&n_vertices, sizeof(n_vertices));
+        model_stream.write((const char*)&ver[0], ver.size() * sizeof(float));
+        model_stream.write((const char*)&n_triangles, sizeof(n_triangles));
+        model_stream.write((const char*)&tri[0], tri.size() * sizeof(unsigned));
     }
     model_stream << std::flush;
     const std::string& model_string = model_stream.str();

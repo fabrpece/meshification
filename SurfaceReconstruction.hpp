@@ -36,6 +36,6 @@ public:
     void operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth);
     void write(const std::string& filename);
     const MeshBuilder& mesh() const {
-	return *mesh_builder_;
+        return *mesh_builder_;
     }
 };

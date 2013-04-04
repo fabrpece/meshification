@@ -39,9 +39,9 @@ public:
     void write(std::ostream& out) const;
     void write(const std::string& filename) const;
     const std::vector<unsigned>& get_triangles() const {
-	return tri_;
+        return tri_;
     }
     const std::vector<float>& get_vertices() const {
-	return ver_;
+        return ver_;
     }
 };

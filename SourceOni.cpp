@@ -32,11 +32,11 @@ SourceOni::SourceOni(const char* filename) :
 {
     ctx->Init();
     if (ctx->OpenFileRecording(filename, *player) != XN_STATUS_OK)
-	throw std::runtime_error("Unable to load oni file");
+        throw std::runtime_error("Unable to load oni file");
     if (ctx->FindExistingNode(XN_NODE_TYPE_DEPTH, *depth_generator) != XN_STATUS_OK)
-	throw std::runtime_error("Selected ONI file doesn't contain depth data");
+        throw std::runtime_error("Selected ONI file doesn't contain depth data");
     if (ctx->FindExistingNode(XN_NODE_TYPE_IMAGE, *image_generator) != XN_STATUS_OK)
-	throw std::runtime_error("Selected ONI file doesn't contain image data");
+        throw std::runtime_error("Selected ONI file doesn't contain image data");
     player->SetRepeat(true);
     ctx->StartGeneratingAll();
 }

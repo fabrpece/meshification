@@ -27,9 +27,9 @@ SourceRaw::SourceRaw(int w, int h, const std::string& name):
     rgb_stream((name + ".rgb").c_str(), std::ios::in | std::ios::binary)
 {
     if (depth_stream.is_open() == false || rgb_stream.is_open() == false) {
-	std::ostringstream error;
-	error << "Unable to open file " << name << ".{rgb|depth}" << std::endl;
-	throw std::logic_error(error.str());
+        std::ostringstream error;
+        error << "Unable to open file " << name << ".{rgb|depth}" << std::endl;
+        throw std::logic_error(error.str());
     }
 }
 
@@ -38,13 +38,13 @@ void SourceRaw::grab(char* buffer_rgb, char* buffer_depth)
     depth_stream.read(buffer_depth, size * 2);
     rgb_stream.read(buffer_rgb, size * 3);
     if (depth_stream.eof() != rgb_stream.eof())
-	throw std::logic_error("Error: depth and rgb files are badly sized");
+        throw std::logic_error("Error: depth and rgb files are badly sized");
     if (depth_stream.eof()) {
-	depth_stream.clear();
-	depth_stream.seekg(0);
-	rgb_stream.clear();
-	rgb_stream.seekg(0);
-	grab(buffer_rgb, buffer_depth);
+        depth_stream.clear();
+        depth_stream.seekg(0);
+        rgb_stream.clear();
+        rgb_stream.seekg(0);
+        grab(buffer_rgb, buffer_depth);
     } else if (!depth_stream || !rgb_stream)
-	throw std::runtime_error("Error reading depth or rgb file");
+        throw std::runtime_error("Error reading depth or rgb file");
 }

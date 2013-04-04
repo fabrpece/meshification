@@ -40,9 +40,9 @@ inline bool isNan(const T& v)
 int triunsuitable(REAL* triorg, REAL* tridest, REAL* triapex, REAL area)
 try {
     if (area < min_area)
-	return 0;
+        return 0;
     if (cloud.get() == 0)
-	return 0;
+        return 0;
     const float x0 = static_cast<float>(triorg[0]), y0 = static_cast<float>(triorg[1]);
     const float x1 = static_cast<float>(tridest[0]), y1 = static_cast<float>(tridest[1]);
     const float x2 = static_cast<float>(triapex[0]), y2 = static_cast<float>(triapex[1]);
@@ -66,44 +66,44 @@ try {
     const float n_norm = n.norm();
     const double area3d = n_norm / 2.0;
     if (area3d < 10e-4)
-	return 0;
+        return 0;
     const float distance = std::abs((actual_pm.dot(n) + d) / n_norm);
     //const double centre_diff = (pm3 - actual_pm).norm();
     //const double sqrt3 = 1.7320508075688772;
     //const double side = std::sqrt(area3d * 4.0 / sqrt3);
     //std::cout << centre_diff << ' ' << std::abs(zm - pm3[2]) << ' ' << distance << ' ' << side << std::endl;
     //if (centre_diff < distance)
-	//std::cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+    //std::cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
     //std::cout << "Area: " << area3d << ' ' << (centre_diff / side) << ' ' << (depth_coefficient / 100.0) << std::endl;
     //if ((centre_diff / side) > (depth_coefficient / 100.0))
     if ((distance * 1000.0) > depth_coefficient)
-    //if ((pm3 - actual_pm).norm() * 1000.0 > (zm * zm * depth_coefficient))
-	return 1;
+        //if ((pm3 - actual_pm).norm() * 1000.0 > (zm * zm * depth_coefficient))
+        return 1;
     return 0;
-  REAL dxoa, dxda, dxod;
-  REAL dyoa, dyda, dyod;
-  REAL oalen, dalen, odlen;
-  REAL maxlen;
+    REAL dxoa, dxda, dxod;
+    REAL dyoa, dyda, dyod;
+    REAL oalen, dalen, odlen;
+    REAL maxlen;
 
-  dxoa = triorg[0] - triapex[0];
-  dyoa = triorg[1] - triapex[1];
-  dxda = tridest[0] - triapex[0];
-  dyda = tridest[1] - triapex[1];
-  dxod = triorg[0] - tridest[0];
-  dyod = triorg[1] - tridest[1];
-  /* Find the squares of the lengths of the triangle's three edges. */
-  oalen = dxoa * dxoa + dyoa * dyoa;
-  dalen = dxda * dxda + dyda * dyda;
-  odlen = dxod * dxod + dyod * dyod;
-  /* Find the square of the length of the longest edge. */
-  maxlen = (dalen > oalen) ? dalen : oalen;
-  maxlen = (odlen > maxlen) ? odlen : maxlen;
+    dxoa = triorg[0] - triapex[0];
+    dyoa = triorg[1] - triapex[1];
+    dxda = tridest[0] - triapex[0];
+    dyda = tridest[1] - triapex[1];
+    dxod = triorg[0] - tridest[0];
+    dyod = triorg[1] - tridest[1];
+    /* Find the squares of the lengths of the triangle's three edges. */
+    oalen = dxoa * dxoa + dyoa * dyoa;
+    dalen = dxda * dxda + dyda * dyda;
+    odlen = dxod * dxod + dyod * dyod;
+    /* Find the square of the length of the longest edge. */
+    maxlen = (dalen > oalen) ? dalen : oalen;
+    maxlen = (odlen > maxlen) ? odlen : maxlen;
 
-  if (maxlen > 0.05 * (triorg[0] * triorg[0] + triorg[1] * triorg[1]) + 0.02) {
-    return 1;
-  } else {
-    return 0;
-  }
+    if (maxlen > 0.05 * (triorg[0] * triorg[0] + triorg[1] * triorg[1]) + 0.02) {
+        return 1;
+    } else {
+        return 0;
+    }
 } catch (const std::exception& e) {
     std::cerr << __func__ << " exception: " << e.what() << std::endl;
     return 0;
@@ -114,24 +114,24 @@ class Segment
     unsigned a_, b_;
 public:
     Segment(unsigned a, unsigned b) :
-	a_(std::min(a, b)),
-	b_(std::max(a, b))
+        a_(std::min(a, b)),
+        b_(std::max(a, b))
     {}
     unsigned a() const {
-	return a_;
+        return a_;
     }
     unsigned b() const {
-	return b_;
+        return b_;
     }
     bool operator==(const Segment& s) const {
-	return s.a() == a() && s.b() == b();
+        return s.a() == a() && s.b() == b();
     }
 };
 
 struct SegmentHasher
 {
     std::size_t operator()(const Segment& s) const {
-	return std::hash<unsigned>()(s.a()) ^ std::hash<unsigned>()(s.b());
+        return std::hash<unsigned>()(s.a()) ^ std::hash<unsigned>()(s.b());
     }
 };
 
@@ -190,9 +190,9 @@ Triangulator::Triangulator(const cv::Mat& depth, double min_area, double depth_c
     cv::Size size = depth.size();
     std::vector<cv::Point> frame {
         cv::Point(0, 0),
-        cv::Point(size.width - 1, 0),
-        cv::Point(size.width - 1, size.height - 1),
-        cv::Point(0, size.height - 1)
+                cv::Point(size.width - 1, 0),
+                cv::Point(size.width - 1, size.height - 1),
+                cv::Point(0, size.height - 1)
     };
     add_contour(frame);
 
@@ -209,27 +209,27 @@ Triangulator::~Triangulator()
 void Triangulator::add_contour(const std::vector<cv::Point>& contour)
 {
     if (contour.size() < 3)
-	return;
+        return;
     const size_t n_points_prev = p_->points.size() / 2, n_points = n_points_prev + contour.size();
     p_->points.reserve(n_points * 2);
     for (size_t i = 0; i < contour.size(); ++i) {
-	const cv::Point& p = contour[i];
-	int& idx = p_->indices.at<int>(p);
-	if (idx == -1) {
-	    p_->points.push_back(p.x);
-	    p_->points.push_back(p.y);
-	    idx = p_->points.size() / 2 - 1;
-	}
+        const cv::Point& p = contour[i];
+        int& idx = p_->indices.at<int>(p);
+        if (idx == -1) {
+            p_->points.push_back(p.x);
+            p_->points.push_back(p.y);
+            idx = p_->points.size() / 2 - 1;
+        }
     }
     p_->segments.reserve(n_points * 2);
     for (size_t i = 0; i < contour.size(); ++i) {
-	const int i1 = i, i2 = i == contour.size() - 1 ? 0 : i + 1;
-	const int& idx1 = p_->indices.at<int>(contour[i1]);
-	const int& idx2 = p_->indices.at<int>(contour[i2]);
-	if (p_->segment_indices.insert(Segment(idx1, idx2)).second == true) {
-	    p_->segments.push_back(idx1);
-	    p_->segments.push_back(idx2);
-	}
+        const int i1 = i, i2 = i == contour.size() - 1 ? 0 : i + 1;
+        const int& idx1 = p_->indices.at<int>(contour[i1]);
+        const int& idx2 = p_->indices.at<int>(contour[i2]);
+        if (p_->segment_indices.insert(Segment(idx1, idx2)).second == true) {
+            p_->segments.push_back(idx1);
+            p_->segments.push_back(idx2);
+        }
     }
     p_->in.numberofpoints = p_->points.size() / 2;
     p_->in.pointlist = &p_->points[0];
@@ -251,9 +251,9 @@ void Triangulator::operator()()
     flags_stream << "zpuQ";
     const std::string flags = flags_stream.str();
     try {
-	triangulate(const_cast<char*>(flags.c_str()), &p_->in, &p_->out, 0);
+        triangulate(const_cast<char*>(flags.c_str()), &p_->in, &p_->out, 0);
     } catch (int) {
-	p_->out.numberoftriangles = 0;
+        p_->out.numberoftriangles = 0;
     }
 }
 
@@ -268,22 +268,22 @@ static cv::Point median_point(const cv::Point* p)
 void Triangulator::draw(cv::Mat& output) const
 {
     for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
-	const int* tri_p = &p_->out.trianglelist[3 * i];
-	cv::Point p[3];
-	for (int j = 0; j < 3; ++j) {
-	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
-	    p[j] = cv::Point(ptr[0], ptr[1]);
-	}
-	cv::Scalar color(200);
-	if (cloud->isValid(p[0].x, p[0].y) && cloud->isValid(p[1].x, p[1].y) && cloud->isValid(p[2].x, p[2].y)) {
-	    color = cv::Scalar(0, 0, 200);
-	    const auto pm = ::median_point(p);
-	    if (cloud->isValid(pm.x, pm.y))
-		cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
-	}
-	cv::line(output, p[0], p[1], color);
-	cv::line(output, p[1], p[2], color);
-	cv::line(output, p[0], p[2], color);
+        const int* tri_p = &p_->out.trianglelist[3 * i];
+        cv::Point p[3];
+        for (int j = 0; j < 3; ++j) {
+            const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
+            p[j] = cv::Point(ptr[0], ptr[1]);
+        }
+        cv::Scalar color(200);
+        if (cloud->isValid(p[0].x, p[0].y) && cloud->isValid(p[1].x, p[1].y) && cloud->isValid(p[2].x, p[2].y)) {
+            color = cv::Scalar(0, 0, 200);
+            const auto pm = ::median_point(p);
+            if (cloud->isValid(pm.x, pm.y))
+                cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
+        }
+        cv::line(output, p[0], p[1], color);
+        cv::line(output, p[1], p[2], color);
+        cv::line(output, p[0], p[2], color);
     } catch (const std::exception& e) {
         std::cerr << __func__ << " exception: " << e.what() << std::endl;
         continue;
@@ -295,23 +295,23 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
     std::vector<cv::Vec6f> triangles;
     triangles.reserve(p_->out.numberoftriangles);
     for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
-	const int* tri_p = &p_->out.trianglelist[3 * i];
-	cv::Point2f p[3];
-	for (int j = 0; j < 3; ++j) {
-	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
-	    p[j] = cv::Point2f(ptr[0], ptr[1]);
-	}
-	if (cloud->isValid(p[0].x, p[0].y) == false &&
-		cloud->isValid(p[1].x, p[1].y) == false &&
-		cloud->isValid(p[2].x, p[2].y) == false)
-	    continue;
-	cv::Vec6f t;
-	for (int j = 0; j < 3; ++j) {
-	    const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
-	    t[2 * j + 0] = ptr[0];
-	    t[2 * j + 1] = ptr[1];
-	}
-	triangles.push_back(t);
+        const int* tri_p = &p_->out.trianglelist[3 * i];
+        cv::Point2f p[3];
+        for (int j = 0; j < 3; ++j) {
+            const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
+            p[j] = cv::Point2f(ptr[0], ptr[1]);
+        }
+        if (cloud->isValid(p[0].x, p[0].y) == false &&
+                cloud->isValid(p[1].x, p[1].y) == false &&
+                cloud->isValid(p[2].x, p[2].y) == false)
+            continue;
+        cv::Vec6f t;
+        for (int j = 0; j < 3; ++j) {
+            const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
+            t[2 * j + 0] = ptr[0];
+            t[2 * j + 1] = ptr[1];
+        }
+        triangles.push_back(t);
     } catch (const std::exception& e) {
         std::cerr << __func__ << " exception: " << e.what() << std::endl;
         continue;
