@@ -115,7 +115,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         video_stream << std::flush;
         video_string = video_stream.str();
         const auto t1 = clock::now();
-        std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
+        //std::cout << "Video encoding: " << (t1 - t0).count() << std::endl;
     });
     async_marker->begin([this, rgb] {
         const auto t0 = clock::now();
@@ -139,7 +139,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             mv_matrix = a.matrix();
         }
         const auto t1 = clock::now();
-        std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
+        //std::cout << "Marker detection: " << (t1 - t0).count() << std::endl;
     });
     const auto t1 = clock::now();
     const bool compression = true;
@@ -173,5 +173,5 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     peer->Send(&network_stream, MEDIUM_PRIORITY, UNRELIABLE, 0, *address, false);
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
-    std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
+    //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
 }
