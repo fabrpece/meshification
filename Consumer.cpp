@@ -32,12 +32,12 @@
 #include <Eigen/Dense>
 #include "Consumer.hpp"
 #include "VideoEncoder.hpp"
-#include "AsyncOperation.hpp"
+#include "AsyncWorker.hpp"
 #include "3dzip/3dzip/Writer.hh"
 
 Consumer::Consumer(const int w, const int h) :
-    async_video(new AsyncOperation),
-    async_marker(new AsyncOperation),
+    async_video(new AsyncWorker),
+    async_marker(new AsyncWorker),
     encode(new VideoEncoder(w, h)),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),

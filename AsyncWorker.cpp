@@ -1,5 +1,3 @@
-#pragma once
-
 /*
     Copyright (C) 2011-2012 Paolo Simone Gasparello <p.gasparello@sssup.it>
 
@@ -19,27 +17,47 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
-#include <functional>
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include <condition_variable>
+#include <sstream>
+#include "AsyncWorker.hpp"
+#include "VideoEncoder.hpp"
 
-class AsyncOperation
+AsyncWorker::AsyncWorker() :
+    t(&AsyncWorker::run, this)
 {
-    std::function<void()> process;
-    std::mutex m;
-    using lock = std::unique_lock<std::mutex>;
-    std::condition_variable c_ready, c_finished;
-    std::atomic<bool> is_running;
-    std::thread t;
+}
 
-    void run();
+AsyncWorker::~AsyncWorker()
+{
+    is_running.store(false);
+    c_ready.notify_all();
+    t.join();
+}
 
-public:
-    AsyncOperation();
-    ~AsyncOperation();
-    void begin(const std::function<void()>&  f);
-    void end();
-};
+void AsyncWorker::begin(const std::function<void()> &f)
+{
+    lock l(m);
+    operation = f;
+    c_ready.notify_all();
+}
+
+void AsyncWorker::end()
+{
+    lock l(m);
+    while (operation != 0)
+        c_finished.wait(l);
+}
+
+void AsyncWorker::run()
+{
+    is_running.store(true);
+    while (true) {
+        lock l(m);
+        while (operation == 0 && is_running)
+            c_ready.wait(l);
+        if (operation == 0)
+            break;
+        operation();
+        operation = 0;
+        c_finished.notify_all();
+    }
+}

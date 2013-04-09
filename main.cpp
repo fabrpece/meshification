@@ -27,7 +27,7 @@
 #include "SourceOni.hpp"
 #include "Consumer.hpp"
 #include "DepthMeshifier.hpp"
-#include "AsyncOperation.hpp"
+#include "AsyncWorker.hpp"
 
 void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& size)
 {
@@ -94,7 +94,7 @@ try {
     std::vector<unsigned> tri;
     std::vector<float> ver;
     std::vector<unsigned short> decompressed_buffer(width * height);
-    AsyncOperation consumer_thread;
+    AsyncWorker consumer_thread;
     for (int frame_id = 0;; ++frame_id) {
         camera->grab(buffer_rgb.data(), buffer_depth);
         int64_t t_begin = cv::getTickCount();

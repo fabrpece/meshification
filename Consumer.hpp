@@ -23,7 +23,7 @@
 #include <vector>
 
 class VideoEncoder;
-class AsyncOperation;
+class AsyncWorker;
 namespace RakNet {
 class RakPeerInterface;
 class SystemAddress;
@@ -36,7 +36,7 @@ class MarkerDetector;
 
 class Consumer
 {
-    std::unique_ptr<AsyncOperation> async_video, async_marker;
+    std::unique_ptr<AsyncWorker> async_video, async_marker;
     std::unique_ptr<VideoEncoder> encode;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
