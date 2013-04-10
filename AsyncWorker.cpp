@@ -30,12 +30,17 @@ AsyncWorker::~AsyncWorker()
 {
     is_running.store(false);
     c_ready.notify_all();
+    c_finished.notify_all();
     t.join();
 }
 
 void AsyncWorker::begin(const std::function<void()> &f)
 {
     lock l(m);
+    while (operation != 0 && is_running)
+        c_finished.wait(l);
+    if (operation != 0)
+        return;
     operation = f;
     c_ready.notify_all();
 }
@@ -43,7 +48,7 @@ void AsyncWorker::begin(const std::function<void()> &f)
 void AsyncWorker::end()
 {
     lock l(m);
-    while (operation != 0)
+    while (operation != 0 && is_running)
         c_finished.wait(l);
 }
 
@@ -56,7 +61,9 @@ void AsyncWorker::run()
             c_ready.wait(l);
         if (operation == 0)
             break;
+        l.unlock();
         operation();
+        l.lock();
         operation = 0;
         c_finished.notify_all();
     }
