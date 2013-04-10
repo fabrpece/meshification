@@ -1,6 +1,4 @@
 #pragma once
-#include <memory>
-#include <iosfwd>
 #include <QGLViewer/qglviewer.h>
 
 
