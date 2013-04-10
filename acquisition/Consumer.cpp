@@ -33,7 +33,7 @@
 #include "Consumer.hpp"
 #include "VideoEncoder.hpp"
 #include "AsyncWorker.hpp"
-#include "3dzip/3dzip/Writer.hh"
+#include "../3dzip/3dzip/Writer.hh"
 
 Consumer::Consumer(const int w, const int h) :
     async_video(new AsyncWorker),
