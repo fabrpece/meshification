@@ -1,5 +1,5 @@
 set_source_files_properties(triangle.cpp PROPERTIES COMPILE_DEFINITIONS "TRILIBRARY;EXTERNAL_TEST;ANSI_DECLARATORS")
-add_executable(aquisition main.cpp
+add_executable(acquisition main.cpp
 	DepthMeshifier.hpp DepthMeshifier.cpp
 	Triangulator.hpp Triangulator.cpp
 	triangle.h triangle.cpp
@@ -12,7 +12,7 @@ add_executable(aquisition main.cpp
 	SourceKinect.hpp SourceKinect.cpp
 	SourceOni.hpp SourceOni.cpp
 	DepthFilter.hpp DepthFilter.cpp)
-target_link_libraries(aquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${ARUCO_LIBRARY})
+target_link_libraries(acquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${ARUCO_LIBRARY})
 if (WIN32)
-        target_link_libraries(aquisition ws2_32)
+        target_link_libraries(acquisition ws2_32)
 endif()

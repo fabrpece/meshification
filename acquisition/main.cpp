@@ -76,9 +76,10 @@ try {
         std::cerr << "Usage: " << argv[0] << " filename{.depth} w h" << std::endl;
         return 1;
     }
-    const int width = argc < 3 ? 640 : std::atoi(argv[2]);
-    const int height = argc < 4 ? 480 : std::atoi(argv[3]);
-    std::auto_ptr<Source> camera(std::string(argv[1]) == "-kinect" ? static_cast<Source*>(new SourceKinect) : std::strcmp(".oni", argv[1] + std::strlen(argv[1]) - 4) == 0 ? static_cast<Source*>(new SourceOni(argv[1])) : static_cast<Source*>(new SourceRaw(width, height, argv[1])));
+    const int width = 640, height = 480;
+    //const int width = argc < 3 ? 640 : std::atoi(argv[2]);
+    //const int height = argc < 4 ? 480 : std::atoi(argv[3]);
+    std::auto_ptr<Source> camera(std::string(argv[1]) == "-kinect" ? static_cast<Source*>(new SourceKinect(argc > 2 ? std::atoi(argv[2]) : 0)) : std::strcmp(".oni", argv[1] + std::strlen(argv[1]) - 4) == 0 ? static_cast<Source*>(new SourceOni(argv[1])) : static_cast<Source*>(new SourceRaw(width, height, argv[1])));
     //std::ifstream decompressed_stream("kinect0.depth", std::ios::binary);
     //if (decompressed_stream.is_open() == false) {
     //std::cerr << "unable to open the stream to get back the decompressed depth map" << std::endl;
