@@ -20,6 +20,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <boost/program_options.hpp>
 #include <opencv/cv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "SourceRaw.hpp"
@@ -72,14 +73,28 @@ void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& si
 
 int main(int argc, char** argv)
 try {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " filename{.depth} w h" << std::endl;
+    std::string address;
+    int width, height, cam_id;
+    namespace po = boost::program_options;
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help,h", "produce help message")
+            ("address,a", po::value<std::string>(&address)->default_value("127.0.0.1"), "Destination address")
+            ("width,w", po::value<int>(&width)->default_value(640), "Range image width")
+            ("height,h", po::value<int>(&height)->default_value(480), "Range image height")
+            ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
         return 1;
     }
-    const int width = 640, height = 480;
-    //const int width = argc < 3 ? 640 : std::atoi(argv[2]);
-    //const int height = argc < 4 ? 480 : std::atoi(argv[3]);
-    std::auto_ptr<Source> camera(std::string(argv[1]) == "-kinect" ? static_cast<Source*>(new SourceKinect(argc > 2 ? std::atoi(argv[2]) : 0)) : std::strcmp(".oni", argv[1] + std::strlen(argv[1]) - 4) == 0 ? static_cast<Source*>(new SourceOni(argv[1])) : static_cast<Source*>(new SourceRaw(width, height, argv[1])));
+
+    std::auto_ptr<Source> camera(new SourceKinect(cam_id));
+    //std::auto_ptr<Source> camera(std::string(argv[1]) == "-kinect" ? static_cast<Source*>(new SourceKinect(argc > 2 ? std::atoi(argv[2]) : 0)) : std::strcmp(".oni", argv[1] + std::strlen(argv[1]) - 4) == 0 ? static_cast<Source*>(new SourceOni(argv[1])) : static_cast<Source*>(new SourceRaw(width, height, argv[1])));
     //std::ifstream decompressed_stream("kinect0.depth", std::ios::binary);
     //if (decompressed_stream.is_open() == false) {
     //std::cerr << "unable to open the stream to get back the decompressed depth map" << std::endl;
@@ -89,7 +104,7 @@ try {
     DepthMeshifier meshify(win, width, height);
     int is_animated = 1;
     bool is_2d_draw_enabled = false, use_color_edges = true;
-    Consumer consume(width, height);
+    Consumer consume(width, height, address);
     char buffer_depth[2 * width * height];
     std::vector<char> buffer_rgb(3 * width * height);
     std::vector<unsigned> tri;
@@ -100,11 +115,11 @@ try {
         camera->grab(buffer_rgb.data(), buffer_depth);
         int64_t t_begin = cv::getTickCount();
         meshify(buffer_rgb.data(), buffer_depth, tri, ver);
-        if (tri.empty())
-            continue;
-        consumer_thread.begin([=, &consume]{
-            consume(ver, tri, buffer_rgb);
-        });
+        if (tri.empty() == false) {
+            consumer_thread.begin([=, &consume]{
+                consume(ver, tri, buffer_rgb);
+            });
+        }
         const double t = (cv::getTickCount() - t_begin) / cv::getTickFrequency() * 1000.0;
         //decompressed_stream.read((char*)&decompressed_buffer[0], width * height * 2);
         //::compare(buffer_depth, &decompressed_buffer[0], cv::Size(width, height));

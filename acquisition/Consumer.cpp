@@ -35,7 +35,8 @@
 #include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
-Consumer::Consumer(const int w, const int h) :
+Consumer::Consumer(const int w, const int h, const string &address) :
+    ip_address(address),
     async_video(new AsyncWorker),
     async_marker(new AsyncWorker),
     encode(new VideoEncoder(w, h)),
@@ -59,7 +60,8 @@ Consumer::~Consumer()
 
 void Consumer::connect()
 {
-    peer->Connect("10.100.38.242", 12345, 0, 0);
+    peer->Connect(ip_address.c_str(), 12345, 0, 0);
+    //peer->Connect("10.100.38.242", 12345, 0, 0);
     //peer->Connect("127.0.0.1", 12345, 0, 0);
     //peer->Connect("10.100.39.14", 12345, 0, 0);
     //peer->Connect("10.100.38.180", 12345, 0, 0);

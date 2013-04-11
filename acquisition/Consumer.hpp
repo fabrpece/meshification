@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 class VideoEncoder;
 class AsyncWorker;
@@ -36,6 +37,7 @@ class MarkerDetector;
 
 class Consumer
 {
+    std::string ip_address;
     std::unique_ptr<AsyncWorker> async_video, async_marker;
     std::unique_ptr<VideoEncoder> encode;
     RakNet::RakPeerInterface* peer;
@@ -49,7 +51,7 @@ class Consumer
     void connect();
 
 public:
-    Consumer(const int w, const int h);
+    Consumer(const int w, const int h, const std::string& address);
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
 };

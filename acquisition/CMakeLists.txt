@@ -1,3 +1,5 @@
+find_package(Boost COMPONENTS program_options REQUIRED)
+
 set_source_files_properties(triangle.cpp PROPERTIES COMPILE_DEFINITIONS "TRILIBRARY;EXTERNAL_TEST;ANSI_DECLARATORS")
 add_executable(acquisition main.cpp
 	DepthMeshifier.hpp DepthMeshifier.cpp
@@ -12,7 +14,7 @@ add_executable(acquisition main.cpp
 	SourceKinect.hpp SourceKinect.cpp
 	SourceOni.hpp SourceOni.cpp
 	DepthFilter.hpp DepthFilter.cpp)
-target_link_libraries(acquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${ARUCO_LIBRARY})
+target_link_libraries(acquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRARY} 3dzip ${VPX_LIBRARY} ${RAKNET_LIBRARY} ${ARUCO_LIBRARY} ${Boost_LIBRARIES})
 if (WIN32)
         target_link_libraries(acquisition ws2_32)
 endif()
