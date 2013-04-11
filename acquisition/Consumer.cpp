@@ -37,13 +37,13 @@
 
 Consumer::Consumer(const int w, const int h, const string &address) :
     ip_address(address),
-    async_video(new AsyncWorker),
-    async_marker(new AsyncWorker),
     encode(new VideoEncoder(w, h)),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
     cam_params(new aruco::CameraParameters),
-    marker_detector(new aruco::MarkerDetector)
+    marker_detector(new aruco::MarkerDetector),
+    async_video(new AsyncWorker),
+    async_marker(new AsyncWorker)
 {
     auto socket = RakNet::SocketDescriptor();
     peer->Startup(1, &socket, 1);
@@ -62,7 +62,6 @@ void Consumer::connect()
 {
     peer->Connect(ip_address.c_str(), 12345, 0, 0);
     //peer->Connect("10.100.38.242", 12345, 0, 0);
-    //peer->Connect("127.0.0.1", 12345, 0, 0);
     //peer->Connect("10.100.39.14", 12345, 0, 0);
     //peer->Connect("10.100.38.180", 12345, 0, 0);
     //peer->Connect("10.100.32.186", 12345, 0, 0);

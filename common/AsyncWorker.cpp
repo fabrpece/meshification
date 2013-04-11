@@ -20,15 +20,19 @@
 #include "AsyncWorker.hpp"
 
 AsyncWorker::AsyncWorker() :
+    is_running(true),
     t(&AsyncWorker::run, this)
 {
 }
 
 AsyncWorker::~AsyncWorker()
 {
-    is_running.store(false);
+    end();
+    lock l(m);
+    is_running = false;
     c_ready.notify_all();
     c_finished.notify_all();
+    l.unlock();
     t.join();
 }
 
@@ -52,7 +56,6 @@ void AsyncWorker::end()
 
 void AsyncWorker::run()
 {
-    is_running.store(true);
     while (true) {
         lock l(m);
         while (operation == 0 && is_running)

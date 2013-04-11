@@ -38,8 +38,6 @@ class MarkerDetector;
 class Consumer
 {
     std::string ip_address;
-    std::unique_ptr<AsyncWorker> async_video, async_marker;
-    std::unique_ptr<VideoEncoder> encode;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected = false;
@@ -47,6 +45,9 @@ class Consumer
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
     double modelview[16];
+
+    std::unique_ptr<AsyncWorker> async_video, async_marker;
+    std::unique_ptr<VideoEncoder> encode;
 
     void connect();
 
