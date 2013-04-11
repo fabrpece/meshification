@@ -74,5 +74,6 @@ void Model::load(const Data3d& data)
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, &data.bgr.front());
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
 }

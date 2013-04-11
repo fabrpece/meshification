@@ -81,10 +81,10 @@ void Receiver::run()
 {
     std::unique_ptr<RakNet::RakPeerInterface, decltype(&RakNet::RakPeerInterface::DestroyInstance)> peer(RakNet::RakPeerInterface::GetInstance(), &RakNet::RakPeerInterface::DestroyInstance);
     RakNet::SocketDescriptor socket(12345, 0);
-    peer->Startup(1, &socket, 1);
-    peer->SetMaximumIncomingConnections(1);
+    peer->Startup(3, &socket, 1);
+    peer->SetMaximumIncomingConnections(3);
     peer->SetTimeoutTime(1000, RakNet::UNASSIGNED_SYSTEM_ADDRESS);
-    VideoDecoder decode;
+    std::unordered_map<std::uint64_t, std::shared_ptr<VideoDecoder>> decoder;
     is_running = true;
     auto packet_deleter = [&peer](RakNet::Packet* p) {
         peer->DeallocatePacket(p);
@@ -100,12 +100,14 @@ void Receiver::run()
         case ID_NEW_INCOMING_CONNECTION: {
             std::unique_lock<std::mutex> l(m);
             new_models.insert(p->guid.g);
+            decoder.insert(std::make_pair(p->guid.g, std::make_shared<VideoDecoder>()));
             break;
         }
         case ID_CONNECTION_LOST:
         case ID_DISCONNECTION_NOTIFICATION: {
             std::unique_lock<std::mutex> l(m);
             delete_models.insert(p->guid.g);
+            decoder.erase(p->guid.g);
             break;
         }
         case ID_USER_PACKET_ENUM: {
@@ -144,7 +146,7 @@ void Receiver::run()
                 data->tri.resize(3 * n_triangles);
                 in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
             }
-            decode(in_video, &data->bgr[0]);
+            (*decoder[p->guid.g])(in_video, &data->bgr[0]);
             compute_texture_coordinates(width, height, data->ver, data->tex);
             compute_normals(*data);
             std::unique_lock<std::mutex> l(m);
