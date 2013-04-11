@@ -32,7 +32,7 @@
 #include <Eigen/Dense>
 #include "Consumer.hpp"
 #include "VideoEncoder.hpp"
-#include "AsyncWorker.hpp"
+#include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
 Consumer::Consumer(const int w, const int h) :
@@ -59,7 +59,8 @@ Consumer::~Consumer()
 
 void Consumer::connect()
 {
-    peer->Connect("127.0.0.1", 12345, 0, 0);
+    peer->Connect("10.100.38.242", 12345, 0, 0);
+    //peer->Connect("127.0.0.1", 12345, 0, 0);
     //peer->Connect("10.100.39.14", 12345, 0, 0);
     //peer->Connect("10.100.38.180", 12345, 0, 0);
     //peer->Connect("10.100.32.186", 12345, 0, 0);
@@ -121,11 +122,11 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         const auto t0 = clock::now();
         std::vector<aruco::Marker> markers;
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
-        //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
-        marker_detector->detect(frame, markers, *cam_params, 0.288, false);
+        marker_detector->detect(frame, markers, *cam_params, 0.197, false);
+        //marker_detector->detect(frame, markers, *cam_params, 0.288, false);
         for (auto& m : markers) {
             m.draw(frame, cv::Scalar(255, 0, 0));
-            if (m.id != 1)
+            if (m.id != 45)
                 continue;
             cv::Mat rot_src = m.Rvec.clone(), rot;
             rot_src.at<float>(1, 0) *= -1.0f;

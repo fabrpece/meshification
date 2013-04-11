@@ -27,7 +27,7 @@
 #include "SourceOni.hpp"
 #include "Consumer.hpp"
 #include "DepthMeshifier.hpp"
-#include "AsyncWorker.hpp"
+#include "../common/AsyncWorker.hpp"
 
 void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& size)
 {

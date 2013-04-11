@@ -17,9 +17,7 @@
     along with meshificator.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sstream>
 #include "AsyncWorker.hpp"
-#include "VideoEncoder.hpp"
 
 AsyncWorker::AsyncWorker() :
     t(&AsyncWorker::run, this)

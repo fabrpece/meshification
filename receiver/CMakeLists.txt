@@ -12,6 +12,7 @@ Receiver.hpp Receiver.cpp
 VideoDecoder.hpp VideoDecoder.cpp
 Model.hpp Model.cpp
 StaticModel.hpp StaticModel.cpp
+../common/AsyncWorker.hpp ../common/AsyncWorker.cpp
 Data3d.hpp)
 
 target_link_libraries(receiver ${RAKNET_LIBRARY} ${VPX_LIBRARY} 3dzip ${PCL_LIBRARIES} ${GLEW_LIBRARY} ${OPENGL_gl_LIBRARY})
@@ -19,3 +20,5 @@ target_link_libraries(receiver ${RAKNET_LIBRARY} ${VPX_LIBRARY} 3dzip ${PCL_LIBR
 if (WIN32)
 	target_link_libraries(receiver ws2_32)
 endif()
+
+install(TARGETS receiver RUNTIME DESTINATION .)

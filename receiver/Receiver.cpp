@@ -12,6 +12,7 @@
 #include "VideoDecoder.hpp"
 #include "Model.hpp"
 #include "Data3d.hpp"
+#include "../common/AsyncWorker.hpp"
 
 static void compute_texture_coordinates(const int width, const int height, const std::vector<float>& v, std::vector<float>& tex)
 {
@@ -21,15 +22,15 @@ static void compute_texture_coordinates(const int width, const int height, const
     const int n_points = v.size() / 3;
     cloud.reserve(n_points);
     for (int i = 0; i < n_points; ++i)
-	cloud.push_back(pcl::PointXYZ(v[3 * i + 0], v[3 * i + 1], v[3 * i + 2]));
+        cloud.push_back(pcl::PointXYZ(v[3 * i + 0], v[3 * i + 1], v[3 * i + 2]));
     pcl::RangeImagePlanar range_image;
     Eigen::Affine3f affine;
     affine.setIdentity();
     range_image.createFromPointCloudWithFixedSize(cloud, width, height, width / 2.0f, height / 2.0f, focal_length, focal_length, affine);
     for (int i = 0; i < n_points; ++i) {
-	range_image.getImagePoint(v[3 * i], v[3 * i + 1], -v[3 * i + 2], tex[i * 2], tex[i * 2 + 1]);
-	tex[i * 2] /= width;
-	tex[i * 2 + 1] /= -height;
+        range_image.getImagePoint(v[3 * i], v[3 * i + 1], -v[3 * i + 2], tex[i * 2], tex[i * 2 + 1]);
+        tex[i * 2] /= width;
+        tex[i * 2 + 1] /= -height;
     }
 }
 
@@ -89,6 +90,7 @@ void Receiver::run()
     auto packet_deleter = [&peer](RakNet::Packet* p) {
         peer->DeallocatePacket(p);
     };
+    AsyncWorker video_worker;
     std::vector<char> buffer;
     while (is_running) {
         RakSleep(30);
@@ -125,6 +127,9 @@ void Receiver::run()
             buffer.resize(size);
             bs.Read(buffer.data(), size);
             std::istringstream in_video(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
+            video_worker.begin([&] {
+                (*decoder[p->guid.g])(in_video, &data->bgr[0]);
+            });
             const bool compression = (in.get() != 0);
             if (compression) {
                 VBE::Reader read;
@@ -146,9 +151,9 @@ void Receiver::run()
                 data->tri.resize(3 * n_triangles);
                 in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
             }
-            (*decoder[p->guid.g])(in_video, &data->bgr[0]);
             compute_texture_coordinates(width, height, data->ver, data->tex);
             compute_normals(*data);
+            video_worker.end();
             std::unique_lock<std::mutex> l(m);
             updates[p->guid.g] = data;
             break;

@@ -7,7 +7,7 @@ add_executable(acquisition main.cpp
 	MeshBuilder.hpp MeshBuilder.cpp
 	Consumer.hpp Consumer.cpp
 	VideoEncoder.hpp VideoEncoder.cpp
-        AsyncWorker.hpp AsyncWorker.cpp
+    ../common/AsyncWorker.hpp ../common/AsyncWorker.cpp
 	SourceRaw.hpp SourceRaw.cpp
 	SourceKinect.hpp SourceKinect.cpp
 	SourceOni.hpp SourceOni.cpp
@@ -16,3 +16,5 @@ target_link_libraries(acquisition ${OpenCV_LIBS} ${PCL_LIBRARIES} ${OPENNI_LIBRA
 if (WIN32)
         target_link_libraries(acquisition ws2_32)
 endif()
+
+install(TARGETS acquisition RUNTIME DESTINATION .)

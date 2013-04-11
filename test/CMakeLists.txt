@@ -10,3 +10,5 @@ find_library(GLEW_LIBRARY NAMES GLEW glew32)
 QT4_WRAP_CPP(VIEWER_CPP Viewer.hpp)
 add_executable(test ${VIEWER_CPP} main.cpp Viewer.hpp Viewer.cpp)
 target_link_libraries(test ${QT_LIBRARIES} receiver ${QGLVIEWER_LIBRARY} ${GLEW_LIBRARY})
+
+install(TARGETS test RUNTIME DESTINATION .)
