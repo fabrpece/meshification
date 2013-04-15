@@ -75,9 +75,9 @@ SurfaceReconstruction::SurfaceReconstruction()
 SurfaceReconstruction::~SurfaceReconstruction()
 {}
 
-void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth)
+void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth, pcl::RangeImagePlanar::Ptr cloud)
 {
-    mesh_builder_.reset(new MeshBuilder(depth));
+    mesh_builder_.reset(new MeshBuilder(cloud));
     mesh2d = cv::Mat(depth.size(), CV_8UC1);
     mesh2d.setTo(0);
     for (size_t i = 0; i < triangles.size(); ++i) {

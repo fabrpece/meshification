@@ -19,6 +19,7 @@
 */
 
 #include <opencv2/opencv.hpp>
+#include <pcl/range_image/range_image_planar.h>
 
 class Triangulator
 {
@@ -27,7 +28,7 @@ class Triangulator
     const double min_area_, depth_coefficient_;
 
 public:
-    Triangulator(const cv::Mat& depth, double min_area = 10.0, double depth_coefficient = 5.0);
+    Triangulator(pcl::RangeImagePlanar::Ptr cloud, double min_area = 10.0, double depth_coefficient = 5.0);
     ~Triangulator();
     void add_contour(const std::vector<cv::Point>& contour);
     void add_hole(const cv::Point2d&);

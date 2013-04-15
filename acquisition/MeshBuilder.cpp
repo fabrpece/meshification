@@ -18,35 +18,19 @@
 */
 
 #include <fstream>
-#include <pcl/range_image/range_image_planar.h>
 #include "MeshBuilder.hpp"
 
-struct MeshBuilder::Impl
-{
-    pcl::RangeImagePlanar::Ptr cloud;
-    Impl();
-};
-
-MeshBuilder::Impl::Impl():
-    cloud(new pcl::RangeImagePlanar)
-{}
-
-MeshBuilder::MeshBuilder(const cv::Mat& depth) :
-    indices_(depth.size(), CV_16SC1),
-    p_(new Impl)
+MeshBuilder::MeshBuilder(pcl::RangeImagePlanar::Ptr cloud) :
+    indices_(cv::Size(cloud->width, cloud->height), CV_16SC1),
+    cloud(cloud)
 {
     indices_.setTo(-1);
     ver_.reserve(10000);
     tri_.reserve(10000);
-    const cv::Size size = depth.size();
-    p_->cloud->setDepthImage(depth.ptr<unsigned short>(), size.width, size.height, size.width / 2, size.height / 2, 517, 517);
-    //p_->cloud->setDepthImage(depth.ptr<unsigned short>(), size.width, size.height, size.width / 2, size.height / 2, 1884.19, 1887.49);
 }
 
 MeshBuilder::~MeshBuilder()
-{
-    delete p_;
-}
+{}
 
 void MeshBuilder::insert(const std::vector<cv::Point>& p)
 {
@@ -56,7 +40,7 @@ void MeshBuilder::insert(const std::vector<cv::Point>& p)
     for (int i = 0; i < 3; ++i) {
         idx[i] = indices_.at<short>(p[i]);
         if (idx[i] == -1) {
-            const auto p3d = p_->cloud->at(p[i].x, p[i].y);
+            const auto p3d = cloud->at(p[i].x, p[i].y);
             ver_.push_back(p3d.x);
             ver_.push_back(-p3d.y);
             ver_.push_back(-p3d.z);

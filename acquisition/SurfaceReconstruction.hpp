@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include <opencv/cv.hpp>
+#include <pcl/range_image/range_image_planar.h>
 
 class MeshBuilder;
 
@@ -33,7 +34,7 @@ class SurfaceReconstruction
 public:
     SurfaceReconstruction();
     ~SurfaceReconstruction();
-    void operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth);
+    void operator()(const std::vector<cv::Vec6f>& triangles, const cv::Mat& depth, pcl::RangeImagePlanar::Ptr cloud);
     void write(const std::string& filename);
     const MeshBuilder& mesh() const {
         return *mesh_builder_;

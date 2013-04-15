@@ -144,13 +144,13 @@ struct Triangulator::Impl
     triangulateio in, out;
     std::vector<unsigned> triangles;
     pcl::RangeImagePlanar::Ptr cloud;
-    Impl(const cv::Size& size);
+    Impl(pcl::RangeImagePlanar::Ptr cloud);
     ~Impl();
 };
 
-Triangulator::Impl::Impl(const cv::Size& size):
-    indices(size, CV_32SC1),
-    cloud(new pcl::RangeImagePlanar)
+Triangulator::Impl::Impl(pcl::RangeImagePlanar::Ptr cloud):
+    indices(cv::Size(cloud->width, cloud->height), CV_32SC1),
+    cloud(cloud)
 {
     indices.setTo(-1);
     in.numberofpoints = 0;
@@ -180,14 +180,14 @@ Triangulator::Impl::~Impl()
     trifree(out.segmentmarkerlist);
 }
 
-Triangulator::Triangulator(const cv::Mat& depth, double min_area, double depth_coefficient) :
-    p_(new Impl(depth.size())),
+Triangulator::Triangulator(pcl::RangeImagePlanar::Ptr cloud, double min_area, double depth_coefficient) :
+    p_(new Impl(cloud)),
     min_area_(min_area),
     depth_coefficient_(depth_coefficient)
 {
     ::min_area = min_area_;
     ::depth_coefficient = depth_coefficient_;
-    cv::Size size = depth.size();
+    cv::Size size = cv::Size(cloud->width, cloud->height);
     std::vector<cv::Point> frame {
         cv::Point(0, 0),
                 cv::Point(size.width - 1, 0),
@@ -195,10 +195,7 @@ Triangulator::Triangulator(const cv::Mat& depth, double min_area, double depth_c
                 cv::Point(0, size.height - 1)
     };
     add_contour(frame);
-
-    //p_->cloud->setDepthImage(depth.ptr<unsigned short>(), size.width, size.height, size.width / 2, size.height / 2, 1884.19, 1887.49);
-    p_->cloud->setDepthImage(depth.ptr<unsigned short>(), size.width, size.height, size.width / 2, size.height / 2, 517, 517);
-    ::cloud = p_->cloud;
+    ::cloud = cloud;
 }
 
 Triangulator::~Triangulator()

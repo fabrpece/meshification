@@ -19,11 +19,13 @@
 
 #include <opencv/cv.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <pcl/range_image/range_image_planar.h>
 #include "DepthMeshifier.hpp"
 #include "Triangulator.hpp"
 #include "MeshBuilder.hpp"
 #include "SurfaceReconstruction.hpp"
 #include "DepthFilter.hpp"
+#include "../common/AsyncWorker.hpp"
 
 using namespace cv;
 
@@ -271,19 +273,20 @@ static void color_edges_callback(int value, void* arg)
 DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
     name(name),
     width(w), height(h),
-    near_plane(0), far_plane(20000),
+    near_plane(800), far_plane(5000),
     min_threshold(40), max_threshold(80),
     approx_polygon(2000), min_area(100),
     dilate_erode_steps(2),
     min_contour_area(100), depth_threshold(20),
     is_draw_2d_enabled(false),
     use_color_edges(true),
-    filter(new DepthFilter(w, h))
+    filter(new DepthFilter(w, h)),
+    canny_worker(new AsyncWorker)
 {
     const char* win = name.c_str();
     cv::namedWindow(win, CV_WINDOW_AUTOSIZE);
-    cv::createTrackbar("Near Plane:", win, &near_plane, 10000);
-    cv::createTrackbar("Far Plane:", win, &far_plane, 20000);
+    cv::createTrackbar("Near Plane:", win, &near_plane, 5000);
+    cv::createTrackbar("Far Plane:", win, &far_plane, 5000);
     cv::createTrackbar("Min Threshold:", win, &min_threshold, 200);
     cv::createTrackbar("Max Threshold:", win, &max_threshold, 600);
     cv::createTrackbar("Approx DP:", win, &approx_polygon, 4000);
@@ -306,6 +309,8 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     //(*filter)(buffer_rgb, (unsigned short*)buffer_depth, internal_edges);
     //cv::imshow("Internal Edges", internal_edges);
     cv::Mat depth(height, width, CV_16UC1, buffer_depth), depth8(height, width, CV_8UC1);
+    pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
+    cloud->setDepthImage(depth.ptr<unsigned short>(), depth.size().width, depth.size().height, depth.size().width / 2, depth.size().height / 2, 517, 517);
     unsigned short depth_min = std::numeric_limits<unsigned short>::max(), depth_max = 0;
     for (int i = 0; i < width * height; ++i) {
         unsigned short& d = depth.at<unsigned short>(i);
@@ -322,18 +327,21 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         unsigned char& c = depth8.at<unsigned char>(i);
         c = s == 0 ? 0 : (s * alpha + beta);
     }
+    cv::Mat img_color(height, width, CV_8UC3, buffer_rgb), img_gray;
+    if (use_color_edges)
+        canny_worker->begin([&img_color, &img_gray, this] {
+            cv::cvtColor(img_color, img_gray, CV_RGB2GRAY);
+            cv::blur(img_gray, img_gray, cv::Size(3, 3));
+            cv::Canny(img_gray, img_gray, min_threshold, max_threshold, 3, true);
+        });
     cv::Mat mask(height, width, CV_8UC1);
     cv::threshold(depth8, mask, 0, 255, CV_THRESH_BINARY);
-    cv::Mat img_color(height, width, CV_8UC3, buffer_rgb);
     cv::blur(depth8, depth8, cv::Size(3, 3));
     cv::Canny(depth8, depth8, min_threshold, max_threshold, 3, true);
     //my_canny(depth8, depth8, min_threshold, max_threshold, 3, true);
-    cv::bitwise_or(depth8, internal_edges, depth8, mask);
+    //cv::bitwise_or(depth8, internal_edges, depth8, mask);
     if (use_color_edges) {
-        cv::Mat img_gray;
-        cv::cvtColor(img_color, img_gray, CV_RGB2GRAY);
-        cv::blur(img_gray, img_gray, cv::Size(3, 3));
-        cv::Canny(img_gray, img_gray, min_threshold, max_threshold, 3, true);
+        canny_worker->end();
         cv::bitwise_or(depth8, img_gray, depth8, mask);
     }
     cv::dilate(depth8, depth8, cv::Mat(), cv::Point(-1, -1), dilate_erode_steps);
@@ -343,7 +351,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(depth8, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-    Triangulator triangulate(depth, min_area, depth_threshold);
+    Triangulator triangulate(cloud, min_area, depth_threshold);
     for (unsigned i = 0; i < contours.size(); ++i) {
         std::vector<cv::Point>& c = contours[i];
         cv::approxPolyDP(c, c, approx_polygon / 1000.0, true);
@@ -363,7 +371,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     if (triangles.empty())
         return;
     SurfaceReconstruction recon;
-    recon(triangles, depth);
+    recon(triangles, depth, cloud);
     const MeshBuilder& m = recon.mesh();
     tri = m.get_triangles();
     ver = m.get_vertices();
