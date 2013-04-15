@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <vector>
+#include <boost/thread.hpp>
 #include <thread>
 #include <mutex>
 #include <unordered_map>
@@ -10,10 +11,12 @@ struct Data3d;
 
 class Receiver
 {
-    std::thread t;
+    boost::thread t;
     bool is_running = false;
 
-    std::mutex m;
+    using Mutex = boost::mutex;
+    using Lock = boost::unique_lock<Mutex>;
+    Mutex m;
     std::unordered_set<std::uint64_t> new_models;
     std::unordered_set<std::uint64_t> delete_models;
     std::unordered_map<std::uint64_t, std::shared_ptr<Data3d>> updates;

@@ -78,7 +78,7 @@ try {
     namespace po = boost::program_options;
     po::options_description desc("Allowed options");
     desc.add_options()
-            ("help,h", "produce help message")
+            ("help", "produce help message")
             ("address,a", po::value<std::string>(&address)->default_value("127.0.0.1"), "Destination address")
             ("width,w", po::value<int>(&width)->default_value(640), "Range image width")
             ("height,h", po::value<int>(&height)->default_value(480), "Range image height")

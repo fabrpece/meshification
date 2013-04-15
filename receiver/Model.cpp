@@ -15,7 +15,7 @@ Model::Model()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
+    //glEnableClientState(GL_NORMAL_ARRAY);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -68,9 +68,9 @@ void Model::load(const Data3d& data)
     glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.tex.size(), data.tex.data(), GL_STATIC_DRAW);
     glTexCoordPointer(2, GL_FLOAT, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.nor.size(), data.nor.data(), GL_STATIC_DRAW);
-    glNormalPointer(GL_FLOAT, 0, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.nor.size(), data.nor.data(), GL_STATIC_DRAW);
+    //glNormalPointer(GL_FLOAT, 0, 0);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, &data.bgr.front());

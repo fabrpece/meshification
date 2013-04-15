@@ -172,7 +172,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     network_stream.Write(model_string.data(), model_string.size());
     network_stream.Write(static_cast<int>(video_string.size()));
     network_stream.Write(video_string.data(), video_string.size());
-    peer->Send(&network_stream, MEDIUM_PRIORITY, UNRELIABLE, 0, *address, false);
+    peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, *address, false);
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
     //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;

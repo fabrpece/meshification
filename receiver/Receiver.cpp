@@ -7,12 +7,18 @@
 #include <RakNet/BitStream.h>
 #include <RakNet/RakSleep.h>
 #include <Eigen/Core>
-#include "../3dzip/3dzip/Reader.hh"
 #include "Receiver.hpp"
 #include "VideoDecoder.hpp"
 #include "Model.hpp"
 #include "Data3d.hpp"
+#include "../3dzip/3dzip/Reader.hh"
 #include "../common/AsyncWorker.hpp"
+
+struct Peer
+{
+    AsyncWorker worker, video_worker;
+    VideoDecoder decoder;
+};
 
 static void compute_texture_coordinates(const int width, const int height, const std::vector<float>& v, std::vector<float>& tex)
 {
@@ -75,7 +81,7 @@ void Receiver::init()
 void Receiver::start()
 {
     is_running = true;
-    t = std::thread(std::bind(&Receiver::run, this));
+    t = boost::thread(std::bind(&Receiver::run, this));
 }
 
 void Receiver::run()
@@ -85,77 +91,78 @@ void Receiver::run()
     peer->Startup(3, &socket, 1);
     peer->SetMaximumIncomingConnections(3);
     peer->SetTimeoutTime(1000, RakNet::UNASSIGNED_SYSTEM_ADDRESS);
-    std::unordered_map<std::uint64_t, std::shared_ptr<VideoDecoder>> decoder;
     is_running = true;
     auto packet_deleter = [&peer](RakNet::Packet* p) {
         peer->DeallocatePacket(p);
     };
-    AsyncWorker video_worker;
-    std::vector<char> buffer;
+    std::unordered_map<std::uint64_t, std::shared_ptr<Peer>> peers;
     while (is_running) {
         RakSleep(30);
         const auto ptr = peer->Receive();
         if (ptr == 0)
             continue;
-        std::unique_ptr<RakNet::Packet, decltype(packet_deleter)> p(ptr, packet_deleter);
+        std::shared_ptr<RakNet::Packet> p(ptr, packet_deleter);
         switch (p->data[0]) {
         case ID_NEW_INCOMING_CONNECTION: {
-            std::unique_lock<std::mutex> l(m);
+            peers.insert(std::make_pair(p->guid.g, std::make_shared<Peer>()));
+            Lock l(m);
             new_models.insert(p->guid.g);
-            decoder.insert(std::make_pair(p->guid.g, std::make_shared<VideoDecoder>()));
             break;
         }
         case ID_CONNECTION_LOST:
         case ID_DISCONNECTION_NOTIFICATION: {
-            std::unique_lock<std::mutex> l(m);
+            peers.erase(p->guid.g);
+            Lock l(m);
             delete_models.insert(p->guid.g);
-            decoder.erase(p->guid.g);
             break;
         }
         case ID_USER_PACKET_ENUM: {
-            const int width = 640, height = 480;
-            auto data = std::make_shared<Data3d>(width, height);
-            RakNet::BitStream bs(p->data, p->length, false);
-            bs.IgnoreBytes(sizeof(RakNet::MessageID));
-            bs.Read(data->modelview);
-            int size;
-            bs.Read(size);
-            buffer.resize(size);
-            bs.Read(buffer.data(), size);
-            std::istringstream in(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
-            bs.Read(size);
-            buffer.resize(size);
-            bs.Read(buffer.data(), size);
-            std::istringstream in_video(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
-            video_worker.begin([&] {
-                (*decoder[p->guid.g])(in_video, &data->bgr[0]);
+            auto peer = peers[p->guid.g];
+            peer->worker.begin([p, peer, this] {
+                const int width = 640, height = 480;
+                auto data = std::make_shared<Data3d>(width, height);
+                RakNet::BitStream bs(p->data, p->length, false);
+                bs.IgnoreBytes(sizeof(RakNet::MessageID));
+                bs.Read(data->modelview);
+                int size;
+                bs.Read(size);
+                std::vector<char> buffer(size);
+                bs.Read(buffer.data(), size);
+                std::istringstream in(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
+                bs.Read(size);
+                buffer.resize(size);
+                bs.Read(buffer.data(), size);
+                std::istringstream in_video(std::string(buffer.begin(), buffer.end()), std::ios::in | std::ios::binary);
+                peer->video_worker.begin([&] {
+                    peer->decoder(in_video, &data->bgr[0]);
+                });
+                const bool compression = (in.get() != 0);
+                if (compression) {
+                    VBE::Reader read;
+                    read(in);
+                    const int n_tri = read.getNumTri();
+                    const int n_ver = read.getNumVer();
+                    data->tri.resize(3 * n_tri);
+                    data->ver.resize(3 * n_ver);
+                    data->tex.resize(2 * n_ver);
+                    read.getTriangles(&data->tri[0]);
+                    read.getAttrib("V", &data->ver[0]);
+                } else {
+                    int n_vertices, n_triangles;
+                    in.read((char*)&n_vertices, sizeof(n_vertices));
+                    data->ver.resize(3 * n_vertices);
+                    data->tex.resize(2 * n_vertices);
+                    in.read((char*)&data->ver[0], data->ver.size() * sizeof(float));
+                    in.read((char*)&n_triangles, sizeof(n_triangles));
+                    data->tri.resize(3 * n_triangles);
+                    in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
+                }
+                compute_texture_coordinates(width, height, data->ver, data->tex);
+                //compute_normals(*data);
+                peer->video_worker.end();
+                Lock l(m);
+                updates[p->guid.g] = data;
             });
-            const bool compression = (in.get() != 0);
-            if (compression) {
-                VBE::Reader read;
-                read(in);
-                const int n_tri = read.getNumTri();
-                const int n_ver = read.getNumVer();
-                data->tri.resize(3 * n_tri);
-                data->ver.resize(3 * n_ver);
-                data->tex.resize(2 * n_ver);
-                read.getTriangles(&data->tri[0]);
-                read.getAttrib("V", &data->ver[0]);
-            } else {
-                int n_vertices, n_triangles;
-                in.read((char*)&n_vertices, sizeof(n_vertices));
-                data->ver.resize(3 * n_vertices);
-                data->tex.resize(2 * n_vertices);
-                in.read((char*)&data->ver[0], data->ver.size() * sizeof(float));
-                in.read((char*)&n_triangles, sizeof(n_triangles));
-                data->tri.resize(3 * n_triangles);
-                in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
-            }
-            compute_texture_coordinates(width, height, data->ver, data->tex);
-            compute_normals(*data);
-            video_worker.end();
-            std::unique_lock<std::mutex> l(m);
-            updates[p->guid.g] = data;
             break;
         }
         }
@@ -171,14 +178,14 @@ void Receiver::stop()
 void Receiver::draw()
 {
     std::list<std::pair<std::uint64_t, std::shared_ptr<Data3d>>> data;
-    std::unique_lock<std::mutex> l(m);
+    Lock l(m);
     for (auto& g : new_models)
         models[g].reset(new Model);
     new_models.clear();
     for (auto& g : delete_models)
         models.erase(g);
     delete_models.clear();
-    for (auto u : updates)
+    for (auto& u : updates)
         data.push_back(u);
     updates.clear();
     l.unlock();
