@@ -11,6 +11,7 @@ Model::Model()
     glGenBuffers(n_vbo, vbo);
     glGenTextures(1, tex);
     Eigen::Matrix4f::Map(&model_matrix[0]).setIdentity();
+    Eigen::Matrix4f::Map(&matrix[0]).setIdentity();
     glBindVertexArray(vao[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[0]);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -47,6 +48,7 @@ void Model::draw() const
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPushMatrix();
     glMultMatrixf(model_matrix);
+    glMultMatrixf(matrix);
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
     glPopMatrix();
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -76,4 +78,27 @@ void Model::load(const Data3d& data)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, &data.bgr.front());
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
+}
+
+void Model::translate(const double x, const double y, const double z)
+{
+    auto m = Eigen::Map<Eigen::Matrix4f>(matrix);
+    Eigen::Affine3f a;
+    a.matrix() = m;
+    a.translate(Eigen::Vector3f(x, y, z));
+    m = a.matrix();
+}
+
+void Model::rotate(const double rad, const double x, const double y, const double z)
+{
+    auto m = Eigen::Map<Eigen::Matrix4f>(matrix);
+    Eigen::Affine3f a;
+    a.matrix() = m;
+    a.rotate(Eigen::AngleAxisf(rad, Eigen::Vector3f(x, y, z)));
+    m = a.matrix();
+}
+
+void Model::reset_position()
+{
+    Eigen::Map<Eigen::Matrix4f>(matrix).setIdentity();
 }

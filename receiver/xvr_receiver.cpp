@@ -33,4 +33,19 @@ void xvr_receiver_load_static(const char* fname)
     p_static->load(fname);
 }
 
+void xvr_receiver_translate(const int i, const double x, const double y, const double z)
+{
+    p->translate(i, x, y, z);
+}
+
+void xvr_receiver_rotate(const int i, const double rad, const double x, const double y, const double z)
+{
+    p->rotate(i, rad, x, y, z);
+}
+
+void xvr_receiver_reset_position(const int i)
+{
+    p->reset_position(i);
+}
+
 }

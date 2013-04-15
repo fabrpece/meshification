@@ -201,3 +201,36 @@ void Receiver::draw()
     for (const auto& m : models)
         m.second->draw();
 }
+
+void Receiver::translate(const int i, const double x, const double y, const double z)
+{
+    if (i < 0 || (i + 1 > models.size())) {
+        std::cerr << "WARNING: trying to translate a non existing model" << std::endl;
+        return;
+    }
+    auto it = models.begin();
+    std::advance(it, i);
+    it->second->translate(x, y, z);
+}
+
+void Receiver::rotate(const int i, const double rad, const double x, const double y, const double z)
+{
+    if (i < 0 || (i + 1 > models.size())) {
+        std::cerr << "WARNING: trying to rotate a non existing model" << std::endl;
+        return;
+    }
+    auto it = models.begin();
+    std::advance(it, i);
+    it->second->rotate(rad, x, y, z);
+}
+
+void Receiver::reset_position(const int i)
+{
+    if (i < 0 || (i + 1 > models.size())) {
+        std::cerr << "WARNING: trying to rotate a non existing model" << std::endl;
+        return;
+    }
+    auto it = models.begin();
+    std::advance(it, i);
+    it->second->reset_position();
+}

@@ -7,7 +7,7 @@ class Model
     static const int n_vbo = 4;
     unsigned vao[1], vbo[n_vbo], tex[1];
     size_t n_elements = 0;
-    float model_matrix[16];
+    float model_matrix[16], matrix[16];
 
     Model(const Model&);
     Model& operator=(const Model&);
@@ -18,4 +18,7 @@ public:
     static void init();
     void draw() const;
     void load(const Data3d& data);
+    void translate(const double x, const double y, const double z);
+    void rotate(const double rad, const double x, const double y, const double z);
+    void reset_position();
 };

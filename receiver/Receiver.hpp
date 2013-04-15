@@ -32,4 +32,8 @@ public:
     void start();
     void stop();
     void draw();
+
+    void translate(const int i, const double x, const double y, const double z);
+    void rotate(const int i, const double rad, const double x, const double y, const double z);
+    void reset_position(const int i);
 };
