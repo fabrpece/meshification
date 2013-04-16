@@ -273,7 +273,7 @@ static void color_edges_callback(int value, void* arg)
 DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
     name(name),
     width(w), height(h),
-    near_plane(800), far_plane(5000),
+    near_plane(500), far_plane(5000),
     min_threshold(40), max_threshold(80),
     approx_polygon(2000), min_area(100),
     dilate_erode_steps(2),
