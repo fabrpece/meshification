@@ -281,7 +281,8 @@ DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
     is_draw_2d_enabled(false),
     use_color_edges(true),
     filter(new DepthFilter(w, h)),
-    canny_worker(new AsyncWorker)
+    canny_worker(new AsyncWorker),
+    cloud_worker(new AsyncWorker)
 {
     const char* win = name.c_str();
     cv::namedWindow(win, CV_WINDOW_AUTOSIZE);
@@ -305,12 +306,10 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
 {
     tri.clear();
     ver.clear();
-    cv::Mat internal_edges(height, width, CV_8UC1);
+    //cv::Mat internal_edges(height, width, CV_8UC1);
     //(*filter)(buffer_rgb, (unsigned short*)buffer_depth, internal_edges);
     //cv::imshow("Internal Edges", internal_edges);
     cv::Mat depth(height, width, CV_16UC1, buffer_depth), depth8(height, width, CV_8UC1);
-    pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
-    cloud->setDepthImage(depth.ptr<unsigned short>(), depth.size().width, depth.size().height, depth.size().width / 2, depth.size().height / 2, 517, 517);
     unsigned short depth_min = std::numeric_limits<unsigned short>::max(), depth_max = 0;
     for (int i = 0; i < width * height; ++i) {
         unsigned short& d = depth.at<unsigned short>(i);
@@ -320,6 +319,10 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         depth_min = std::min(d, depth_min);
         depth_max = std::max(d, depth_max);
     }
+    pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
+    cloud_worker->begin([cloud, &depth] {
+        cloud->setDepthImage(depth.ptr<unsigned short>(), depth.size().width, depth.size().height, depth.size().width / 2, depth.size().height / 2, 517, 517);
+    });
     const double alpha = 250.0 / (depth_max - depth_min);
     const double beta = -depth_min * alpha + 5;
     for (int i = 0; i < width * height; ++i) {
@@ -351,6 +354,7 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(depth8, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    cloud_worker->end();
     Triangulator triangulate(cloud, min_area, depth_threshold);
     for (unsigned i = 0; i < contours.size(); ++i) {
         std::vector<cv::Point>& c = contours[i];

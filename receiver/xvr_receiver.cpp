@@ -1,5 +1,5 @@
 #include <memory>
-#include <list>
+#include <forward_list>
 #include "xvr_receiver.h"
 #include "Receiver.hpp"
 #include "StaticModel.hpp"

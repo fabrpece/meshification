@@ -39,7 +39,7 @@ class DepthMeshifier
     bool use_color_edges;
 
     std::auto_ptr<DepthFilter> filter;
-    std::unique_ptr<AsyncWorker> canny_worker;
+    std::unique_ptr<AsyncWorker> canny_worker, cloud_worker;
 
 public:
     DepthMeshifier(const std::string& name, int w, int h);
