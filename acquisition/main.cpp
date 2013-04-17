@@ -104,7 +104,7 @@ try {
     const std::string win = "Point Clout Meshifier";
     DepthMeshifier meshify(win, width, height);
     int is_animated = 1;
-    bool is_2d_draw_enabled = false, use_color_edges = true;
+    bool is_2d_draw_enabled = false, use_color_edges = true, use_marker = true;
     Consumer consume(width, height, address, name);
     char buffer_depth[2 * width * height];
     std::vector<char> buffer_rgb(3 * width * height);
@@ -146,6 +146,12 @@ try {
         else if (c == 'c') {
             use_color_edges = !use_color_edges;
             meshify.enable_color_edges(use_color_edges);
+            cv::displayOverlay(win, std::string("Color edge ") + (use_color_edges ? "enabled" : "disabled"), 1000);
+        }
+        else if (c == 'm') {
+            use_marker = !use_marker;
+            consume.enable_marker_tracking(use_marker);
+            cv::displayOverlay(win, std::string("Market tracking ") + (use_marker ? "enabled" : "disabled"), 1000);
         }
     }
 } catch (const std::exception& e) {
