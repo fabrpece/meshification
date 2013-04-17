@@ -73,7 +73,7 @@ void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& si
 
 int main(int argc, char** argv)
 try {
-    std::string address;
+    std::string address, name;
     int width, height, cam_id;
     namespace po = boost::program_options;
     po::options_description desc("Allowed options");
@@ -82,7 +82,8 @@ try {
             ("address,a", po::value<std::string>(&address)->default_value("127.0.0.1"), "Destination address")
             ("width,w", po::value<int>(&width)->default_value(640), "Range image width")
             ("height,h", po::value<int>(&height)->default_value(480), "Range image height")
-            ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera");
+            ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera")
+            ("name,n", po::value<std::string>(&name)->default_value("default"));
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -104,7 +105,7 @@ try {
     DepthMeshifier meshify(win, width, height);
     int is_animated = 1;
     bool is_2d_draw_enabled = false, use_color_edges = true;
-    Consumer consume(width, height, address);
+    Consumer consume(width, height, address, name);
     char buffer_depth[2 * width * height];
     std::vector<char> buffer_rgb(3 * width * height);
     std::vector<unsigned> tri;

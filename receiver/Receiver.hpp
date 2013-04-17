@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <string>
 #include <vector>
 #include <boost/thread.hpp>
 #include <thread>
@@ -33,7 +34,8 @@ public:
     void stop();
     void draw();
 
-    void translate(const int i, const double x, const double y, const double z);
-    void rotate(const int i, const double rad, const double x, const double y, const double z);
-    void reset_position(const int i);
+    void translate(const std::string& name, const double x, const double y, const double z);
+    void rotate(const std::string &name, const double rad, const double x, const double y, const double z);
+    void reset_position(const std::string& name);
+    void save_view() const;
 };

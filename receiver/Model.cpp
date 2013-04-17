@@ -1,4 +1,6 @@
 #include <stdexcept>
+#include <iostream>
+#include <fstream>
 #include <GL/glew.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -61,6 +63,16 @@ void Model::load(const Data3d& data)
     n_elements = data.tri.size();
     if (n_elements == 0)
         return;
+    if (data.name != name) {
+        name = data.name;
+        std::ifstream calibration(name + "_calib.txt");
+        if (calibration.is_open())
+            for (int i = 0; i < 16; ++i)
+                calibration >> matrix[i];
+        else
+            Eigen::Map<Eigen::Matrix4f>(matrix).setIdentity();
+        std::cout << name << " calibration:\n" << Eigen::Map<Eigen::Matrix4f>(matrix) << std::endl;
+    }
     std::copy(data.modelview, data.modelview + 16, model_matrix);
     glBindVertexArray(vao[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * data.tri.size(), data.tri.data(), GL_STATIC_DRAW);
@@ -78,6 +90,13 @@ void Model::load(const Data3d& data)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, &data.bgr.front());
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
+}
+
+void Model::save_view() const
+{
+    std::ofstream calibration("calib_" + name + ".txt");
+    for (int i = 0; i < 16; ++i)
+        calibration << matrix[i] << ' ';
 }
 
 void Model::translate(const double x, const double y, const double z)

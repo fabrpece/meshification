@@ -123,6 +123,9 @@ void Receiver::run()
                 auto data = std::make_shared<Data3d>(width, height);
                 RakNet::BitStream bs(p->data, p->length, false);
                 bs.IgnoreBytes(sizeof(RakNet::MessageID));
+                RakNet::RakString name;
+                bs.Read(name);
+                data->name = name.C_String();
                 bs.Read(data->modelview);
                 int size;
                 bs.Read(size);
@@ -202,35 +205,44 @@ void Receiver::draw()
         m.second->draw();
 }
 
-void Receiver::translate(const int i, const double x, const double y, const double z)
+void Receiver::translate(const std::string& name, const double x, const double y, const double z)
 {
-    if (i < 0 || (i + 1 > models.size())) {
-        std::cerr << "WARNING: trying to translate a non existing model" << std::endl;
+    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+        return m.second->get_name() == name;
+    });
+    if (it == models.end()) {
+        std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;
     }
-    auto it = models.begin();
-    std::advance(it, i);
     it->second->translate(x, y, z);
 }
 
-void Receiver::rotate(const int i, const double rad, const double x, const double y, const double z)
+void Receiver::rotate(const std::string& name, const double rad, const double x, const double y, const double z)
 {
-    if (i < 0 || (i + 1 > models.size())) {
-        std::cerr << "WARNING: trying to rotate a non existing model" << std::endl;
+    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+        return m.second->get_name() == name;
+    });
+    if (it == models.end()) {
+        std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;
     }
-    auto it = models.begin();
-    std::advance(it, i);
     it->second->rotate(rad, x, y, z);
 }
 
-void Receiver::reset_position(const int i)
+void Receiver::reset_position(const std::string &name)
 {
-    if (i < 0 || (i + 1 > models.size())) {
-        std::cerr << "WARNING: trying to rotate a non existing model" << std::endl;
+    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+        return m.second->get_name() == name;
+    });
+    if (it == models.end()) {
+        std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;
     }
-    auto it = models.begin();
-    std::advance(it, i);
     it->second->reset_position();
+}
+
+void Receiver::save_view() const
+{
+    for (const auto& m : models)
+        m.second->save_view();
 }

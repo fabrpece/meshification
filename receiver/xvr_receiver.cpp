@@ -35,19 +35,30 @@ void xvr_receiver_load_static(const char* fname)
     static_models.back().load(fname);
 }
 
-void xvr_receiver_translate(const int i, const double x, const double y, const double z)
+void xvr_receiver_translate(const char *name, const double x, const double y, const double z)
 {
-    p->translate(i, x, y, z);
+    p->translate(name, x, y, z);
 }
 
-void xvr_receiver_rotate(const int i, const double rad, const double x, const double y, const double z)
+void xvr_receiver_rotate(const char* name, const double rad, const double x, const double y, const double z)
 {
-    p->rotate(i, rad, x, y, z);
+    p->rotate(name, rad, x, y, z);
 }
 
-void xvr_receiver_reset_position(const int i)
+void xvr_receiver_reset_position(const char *name)
 {
-    p->reset_position(i);
+    p->reset_position(name);
+}
+
+void xvr_receiver_toggle_point_smooth()
+{
+    for (auto& m : static_models)
+        m.tooglePointSmooth();
+}
+
+void xvr_receiver_save_view()
+{
+    p->save_view();
 }
 
 }

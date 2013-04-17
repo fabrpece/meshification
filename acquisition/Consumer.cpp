@@ -26,6 +26,7 @@
 #include <RakNet/RakNetTypes.h>
 #include <RakNet/MessageIdentifiers.h>
 #include <RakNet/BitStream.h>
+#include <RakNet/RakString.h>
 #include <aruco/cameraparameters.h>
 #include <aruco/markerdetector.h>
 #include <Eigen/Core>
@@ -35,8 +36,9 @@
 #include "../common/AsyncWorker.hpp"
 #include "../3dzip/3dzip/Writer.hh"
 
-Consumer::Consumer(const int w, const int h, const string &address) :
+Consumer::Consumer(const int w, const int h, const string &address, const string &name) :
     ip_address(address),
+    name(name),
     encode(new VideoEncoder(w, h)),
     peer(RakNet::RakPeerInterface::GetInstance()),
     address(new RakNet::SystemAddress),
@@ -123,8 +125,8 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         const auto t0 = clock::now();
         std::vector<aruco::Marker> markers;
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
-        marker_detector->detect(frame, markers, *cam_params, 0.197, false);
-        //marker_detector->detect(frame, markers, *cam_params, 0.288, false);
+        //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
+        marker_detector->detect(frame, markers, *cam_params, 0.288, false);
         for (auto& m : markers) {
             m.draw(frame, cv::Scalar(255, 0, 0));
             if (m.id != 45)
@@ -167,6 +169,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     const auto t3 = clock::now();
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_ENUM));
+    network_stream.Write(RakNet::RakString(name.c_str()));
     network_stream.Write(modelview);
     network_stream.Write(static_cast<int>(model_string.size()));
     network_stream.Write(model_string.data(), model_string.size());
