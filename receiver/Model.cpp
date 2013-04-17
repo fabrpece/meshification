@@ -65,7 +65,7 @@ void Model::load(const Data3d& data)
         return;
     if (data.name != name) {
         name = data.name;
-        std::ifstream calibration(name + "_calib.txt");
+        std::ifstream calibration("calib_" + name + ".txt");
         if (calibration.is_open())
             for (int i = 0; i < 16; ++i)
                 calibration >> matrix[i];
