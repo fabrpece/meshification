@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <stdexcept>
 #include <chrono>
 #include <future>
@@ -51,8 +52,11 @@ Consumer::Consumer(const int w, const int h, const string &address, const string
     peer->Startup(1, &socket, 1);
     connect();
     cam_params->readFromXMLFile("cam.yml");
-    Eigen::Map<Eigen::Matrix4d> mv_matrix(modelview);
-    mv_matrix.setIdentity();
+    Eigen::Map<Eigen::Matrix4d>(modelview).setIdentity();
+    std::ifstream calibration("calibration.txt");
+    if (calibration.is_open())
+        for (int i = 0; i < 16; ++i)
+            calibration >> modelview[i];
 }
 
 Consumer::~Consumer()
@@ -63,10 +67,6 @@ Consumer::~Consumer()
 void Consumer::connect()
 {
     peer->Connect(ip_address.c_str(), 12345, 0, 0);
-    //peer->Connect("10.100.38.242", 12345, 0, 0);
-    //peer->Connect("10.100.39.14", 12345, 0, 0);
-    //peer->Connect("10.100.38.180", 12345, 0, 0);
-    //peer->Connect("10.100.32.186", 12345, 0, 0);
 }
 
 void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb)
@@ -180,4 +180,15 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     const auto t4 = clock::now();
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
     //std::cout << "Mesh compression: " << (t2 - t1).count() << "\nNetwork: " << (t4 - t3).count() << "\nTotal: " << (t4 - t0).count() << std::endl;
+}
+
+void Consumer::save_view()
+{
+    std::ofstream calibration("calibration.txt");
+    if (calibration.is_open() == false) {
+        std::cerr << "WARNING: Unable to save the calibration into the file" << std::endl;
+        return;
+    }
+    for (int i = 0; i < 16; ++i)
+        calibration << modelview[i] << ' ';
 }

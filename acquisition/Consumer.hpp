@@ -37,7 +37,7 @@ class MarkerDetector;
 
 class Consumer
 {
-    bool use_marker_tracking = true;
+    bool use_marker_tracking = false;
     std::string ip_address, name;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
@@ -59,4 +59,5 @@ public:
     void enable_marker_tracking(const bool b) {
         use_marker_tracking = b;
     }
+    void save_view();
 };
