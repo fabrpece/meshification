@@ -85,6 +85,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
             if (is_connected == false)
                 std::cerr << "Connection established" << std::endl;
             *address = p->systemAddress;
+            encode.reset(new VideoEncoder(cam_params->CamSize.width, cam_params->CamSize.height));
             is_connected = true;
             break;
         case ID_CONNECTION_ATTEMPT_FAILED:
@@ -96,6 +97,7 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         case ID_DISCONNECTION_NOTIFICATION:
             connect();
             std::cerr << "Connection lost" << std::endl;
+            encode.reset();
             is_connected = false;
             break;
         case ID_NO_FREE_INCOMING_CONNECTIONS:
