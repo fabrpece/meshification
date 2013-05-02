@@ -8,15 +8,15 @@
 #include "StaticModel.hpp"
 
 static
-std::string getFileExtension(const std::string& FileName)
+std::string getFileExtension(const std::string& filename)
 {
-    if(FileName.find_last_of(".") != std::string::npos)
-        return FileName.substr(FileName.find_last_of(".")+1);
-    return "";
+    const auto p = filename.find_last_of('.');
+    return p != std::string::npos ? filename.substr(p + 1) : "";
 }
 
 StaticModel::StaticModel() :
-    n_vertices(0)
+    n_vertices(0),
+    use_point_smooth(false)
 {
     Eigen::Map<Eigen::Matrix4f> mv(modelview);
     mv.setIdentity();
@@ -33,7 +33,7 @@ StaticModel::~StaticModel()
 static
 bool readPly(const std::string& fname, pcl::PointCloud<pcl::PointXYZRGB>& cloud, float modelview[16]);
 
-void StaticModel::load(const char *fname)
+void StaticModel::load(const char* fname)
 {
     typedef std::chrono::high_resolution_clock clock;
     const auto t0 = clock::now();
@@ -50,37 +50,76 @@ void StaticModel::load(const char *fname)
     if (cloud.points.size() == 0)
         return;
 
-    const auto t1 = clock::now();
-    std::cout << "Static model loaded in " << (t1-t0).count()/1000 << "ms" <<std::endl;
-    std::vector<float> VBO_cloud_pos(cloud.points.size() * 3);
-    std::vector<unsigned char> VBO_cloud_cols(cloud.points.size() * 3);
+    std::vector<float> positions;
+    positions.reserve(n_vertices * 3);
+    std::vector<unsigned char> colors;
+    colors.reserve(n_vertices * 3);
 
-    int k = 0;
-    for(int i = 0; i < cloud.points.size() * 3; i += 3) {
-        VBO_cloud_pos[i] = cloud.points[k].x;
-        VBO_cloud_pos[i+1] = cloud.points[k].y;
-        VBO_cloud_pos[i+2] = cloud.points[k].z;
-        int32_t rgb_val = *(int32_t*)(&cloud.points[k].rgb);
-        VBO_cloud_cols[i] = ((unsigned char) (rgb_val >> 16));//r
-        VBO_cloud_cols[i+1] = ((unsigned char) (rgb_val >> 8));//g
-        VBO_cloud_cols[i+2] = ((unsigned char) (rgb_val >> 0));//b
-        ++k;
+    for(int i = 0; i < n_vertices; ++i) {
+        positions.push_back(cloud.points[i].x);
+        positions.push_back(cloud.points[i].y);
+        positions.push_back(cloud.points[i].z);
+        const int32_t rgb_val = *(int32_t*)(&cloud.points[i].rgb);
+        colors.push_back(static_cast<unsigned char>(rgb_val >> 16));//r
+        colors.push_back(static_cast<unsigned char>(rgb_val >> 8));//g
+        colors.push_back(static_cast<unsigned char>(rgb_val >> 0));//b
     }
 
     glBindVertexArray(vao[0]);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  cloud.points.size() * 3, &VBO_cloud_pos[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *  n_vertices * 3, &positions[0], GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0,0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLbyte) * cloud.points.size() * 3, &VBO_cloud_cols[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLbyte) * n_vertices * 3, &colors[0], GL_STATIC_DRAW);
     glColorPointer(3, GL_UNSIGNED_BYTE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    const auto t1 = clock::now();
+    std::cout << "Static model loaded in " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms." << std::endl;
 }
 
-void StaticModel::draw()
+void StaticModel::tooglePointSmooth()
+{
+    use_point_smooth = !use_point_smooth;
+}
+
+static
+void enablePointSprite(const bool usePointSmooth)
+{
+    //Make space for particle limits and fill it from OGL call.
+    GLfloat sizes[2];
+    glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE, sizes);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    float quadratic[] =  {1.0f, 5.0f, 5.0f};
+    glPointParameterfvARB(GL_POINT_DISTANCE_ATTENUATION_ARB, quadratic);
+    glPointParameterfARB(GL_POINT_FADE_THRESHOLD_SIZE_ARB, 80.0f);
+    if (usePointSmooth)
+        glEnable(GL_POINT_SMOOTH);
+    else
+        glDisable(GL_POINT_SMOOTH);
+    glPointSize(70);
+
+    //Tell it the max and min sizes we can use using our pre-filled array.
+    glPointParameterfARB(GL_POINT_SIZE_MIN_ARB, sizes[0]);
+    glPointParameterfARB(GL_POINT_SIZE_MAX_ARB, sizes[1]);
+    glTexEnvf(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
+}
+
+static
+void disablePointSprite()
+{
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+}
+
+void StaticModel::draw() const
 {
     if (n_vertices == 0)
         return;
@@ -90,7 +129,13 @@ void StaticModel::draw()
     glPushMatrix();
     glMultMatrixf(modelview);
     glBindVertexArray(vao[0]);
+    float pointsize = 0.0f;
+    glGetFloatv(GL_POINT_SIZE, &pointsize);
+    glPointSize(2.5);
+    enablePointSprite(use_point_smooth);
     glDrawArrays(GL_POINTS, 0, n_vertices);
+    disablePointSprite();
+    glPointSize(pointsize);
     glBindVertexArray(0);
     glPopMatrix();
     if (lighting_state == GL_TRUE)
@@ -121,6 +166,7 @@ bool readPly(const std::string& fname, pcl::PointCloud<pcl::PointXYZRGB>& cloud,
     property uchar blue
     end_header
     */
+    bool has_alpha = false;
     std::getline(fileIn,line); //ply
     while (line != std::string("end_header")) {
         std::getline(fileIn,line);
@@ -139,6 +185,14 @@ bool readPly(const std::string& fname, pcl::PointCloud<pcl::PointXYZRGB>& cloud,
             if (tmp != "ascii")
                 is_bin = true;
         }
+        else if (tmp == "property") {
+            iss >> tmp;
+            if (tmp == "uchar") {
+                iss >>tmp;
+                if (tmp == "alpha")
+                    has_alpha = true;
+            }
+        }
         else if (tmp == "element") {
             iss >> tmp;
             if (tmp != "vertex")
@@ -150,7 +204,7 @@ bool readPly(const std::string& fname, pcl::PointCloud<pcl::PointXYZRGB>& cloud,
 
     for (int i = 0; i < tot_points && fileIn; ++i) {
         float x, y, z;
-        unsigned char r, g, b;
+        unsigned char r, g, b, a;
         if (is_bin == true) {
             fileIn.read((char*)&x, sizeof(float));
             fileIn.read((char*)&y, sizeof(float));
@@ -158,6 +212,8 @@ bool readPly(const std::string& fname, pcl::PointCloud<pcl::PointXYZRGB>& cloud,
             fileIn.read((char*)&r, sizeof(unsigned char));
             fileIn.read((char*)&g, sizeof(unsigned char));
             fileIn.read((char*)&b, sizeof(unsigned char));
+            if (has_alpha == true)
+                fileIn.read((char*)&a, sizeof(unsigned char));
         } else {
             std::getline(fileIn,line);
             std::istringstream iss(line);
