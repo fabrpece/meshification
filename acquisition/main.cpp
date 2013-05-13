@@ -73,15 +73,16 @@ void compare(char* orig_buffer, unsigned short* final_buffer, const cv::Size& si
 
 int main(int argc, char** argv)
 try {
-    std::string address, name;
+    std::string address, name, camera_calibration;
     int width, height, cam_id;
     namespace po = boost::program_options;
     po::options_description desc("Allowed options");
     desc.add_options()
-            ("help", "produce help message")
+            ("help,h", "produce help message")
             ("address,a", po::value<std::string>(&address)->default_value("127.0.0.1"), "Destination address")
-            ("width,w", po::value<int>(&width)->default_value(640), "Range image width")
-            ("height,h", po::value<int>(&height)->default_value(480), "Range image height")
+            ("calib,c", po::value<std::string>(&camera_calibration)->default_value("cam.yml"))
+            ("width,W", po::value<int>(&width)->default_value(640), "Range image width")
+            ("height,H", po::value<int>(&height)->default_value(480), "Range image height")
             ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera")
             ("name,n", po::value<std::string>(&name)->default_value("default"));
 
@@ -102,7 +103,7 @@ try {
     //return -1;
     //}
     const std::string win = "Point Clout Meshifier";
-    DepthMeshifier meshify(win, width, height);
+    DepthMeshifier meshify(win, camera_calibration);
     int is_animated = 1;
     bool is_2d_draw_enabled = false, use_color_edges = true, use_marker = false;
     Consumer consume(width, height, address, name);
@@ -110,7 +111,7 @@ try {
     std::vector<char> buffer_rgb(3 * width * height);
     std::vector<unsigned> tri;
     std::vector<float> ver;
-    std::vector<unsigned short> decompressed_buffer(width * height);
+    //std::vector<unsigned short> decompressed_buffer(width * height);
     AsyncWorker consumer_thread;
     for (int frame_id = 0;; ++frame_id) {
         camera->grab(buffer_rgb.data(), buffer_depth);

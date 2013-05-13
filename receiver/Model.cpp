@@ -71,7 +71,7 @@ void Model::load(const Data3d& data)
                 calibration >> matrix[i];
         else
             Eigen::Map<Eigen::Matrix4f>(matrix).setIdentity();
-        std::cout << name << " calibration:\n" << Eigen::Map<Eigen::Matrix4f>(matrix) << std::endl;
+        //std::cout << name << " calibration:\n" << Eigen::Map<Eigen::Matrix4f>(matrix) << std::endl;
     }
     std::copy(data.modelview, data.modelview + 16, model_matrix);
     glBindVertexArray(vao[0]);

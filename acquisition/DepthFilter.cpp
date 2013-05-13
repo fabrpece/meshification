@@ -55,7 +55,7 @@ void DepthFilter::operator()(char* color_buffer, unsigned short* depth_buffer, c
 {
     const double start_time = pcl::getTime();
     pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
-    cloud->setDepthImage(depth_buffer, width, height, width / 2, height / 2, 517, 517);
+    cloud->setDepthImage(depth_buffer, width, height, width / 2, height / 2, 540, 540);
     pcl::IntegralImageNormalEstimation<pcl::RangeImagePlanar::PointType, pcl::Normal> ne;
     ne.setNormalEstimationMethod(ne.AVERAGE_DEPTH_CHANGE);
     ne.setNormalSmoothingSize(10.0f);

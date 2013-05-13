@@ -20,10 +20,8 @@ struct Peer
     VideoDecoder decoder;
 };
 
-static void compute_texture_coordinates(const int width, const int height, const std::vector<float>& v, std::vector<float>& tex)
+static void compute_texture_coordinates(const int width, const int height, const float cx, const float cy, const float fx, const float fy, const std::vector<float>& v, std::vector<float>& tex)
 {
-    const float focal_length = 517;
-    //const float focal_length = 1885;
     pcl::PointCloud<pcl::PointXYZ> cloud;
     const int n_points = v.size() / 3;
     cloud.reserve(n_points);
@@ -32,7 +30,7 @@ static void compute_texture_coordinates(const int width, const int height, const
     pcl::RangeImagePlanar range_image;
     Eigen::Affine3f affine;
     affine.setIdentity();
-    range_image.createFromPointCloudWithFixedSize(cloud, width, height, width / 2.0f, height / 2.0f, focal_length, focal_length, affine);
+    range_image.createFromPointCloudWithFixedSize(cloud, width, height, cx, cy, fx, fy, affine);
     for (int i = 0; i < n_points; ++i) {
         range_image.getImagePoint(v[3 * i], v[3 * i + 1], -v[3 * i + 2], tex[i * 2], tex[i * 2 + 1]);
         tex[i * 2] /= width;
@@ -126,6 +124,11 @@ void Receiver::run()
                 RakNet::RakString name;
                 bs.Read(name);
                 data->name = name.C_String();
+                float cx, cy, fx, fy;
+                bs.Read(cx);
+                bs.Read(cy);
+                bs.Read(fx);
+                bs.Read(fy);
                 bs.Read(data->modelview);
                 int size;
                 bs.Read(size);
@@ -160,7 +163,7 @@ void Receiver::run()
                     data->tri.resize(3 * n_triangles);
                     in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
                 }
-                compute_texture_coordinates(width, height, data->ver, data->tex);
+                compute_texture_coordinates(width, height, cx, cy, fx, fy, data->ver, data->tex);
                 //compute_normals(*data);
                 peer->video_worker.end();
                 Lock l(m);

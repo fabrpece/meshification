@@ -270,9 +270,11 @@ static void color_edges_callback(int value, void* arg)
     use_color_edges = value == 1 ? true : false;
 }
 
-DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
+DepthMeshifier::DepthMeshifier(const std::string& name, const std::string& calibration) :
     name(name),
-    width(w), height(h),
+    width(640), height(480),
+    focal_x(540), focal_y(540),
+    center_x(width / 2.0), center_y(height / 2.0),
     near_plane(500), far_plane(4000),
     min_threshold(40), max_threshold(80),
     approx_polygon(2000), min_area(100),
@@ -280,7 +282,7 @@ DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
     min_contour_area(100), depth_threshold(20),
     is_draw_2d_enabled(false),
     use_color_edges(true),
-    filter(new DepthFilter(w, h)),
+    filter(new DepthFilter(width, height)),
     canny_worker(new AsyncWorker),
     cloud_worker(new AsyncWorker)
 {
@@ -295,6 +297,20 @@ DepthMeshifier::DepthMeshifier(const std::string& name, int w, int h) :
     cv::createTrackbar("Min Contour Area:", win, &min_contour_area, 1000);
     cv::createTrackbar("Depth Threshold at 2m:", win, &depth_threshold, 200);
     cv::createTrackbar("Dilate/Erode Steps:", win, &dilate_erode_steps, 10);
+    cv::FileStorage fs(calibration, cv::FileStorage::READ);
+    if (fs.isOpened()) {
+        fs["image_width"] >> width;
+        fs["image_height"] >> height;
+        cv::Mat camera_matrix;
+        fs["camera_matrix"] >> camera_matrix;
+        focal_x = camera_matrix.at<double>(0, 0);
+        focal_y = camera_matrix.at<double>(1, 1);
+        center_x = camera_matrix.at<double>(0, 2);
+        center_y = camera_matrix.at<double>(1, 2);
+        std::cout << camera_matrix << std::endl;
+        std::cout << "Cam: " << width << ' ' << height << ' ' << focal_x << ' ' << focal_y << ' ' << center_x << ' ' << center_y << std::endl;
+    } else
+        std::cerr << "WARNING: Unable to open camera calibration file " << calibration << ". Using default (inexact) camera matrix." << std::endl;
 }
 
 DepthMeshifier::~DepthMeshifier()
@@ -320,8 +336,8 @@ void DepthMeshifier::operator()(char* buffer_rgb, char* buffer_depth, std::vecto
         depth_max = std::max(d, depth_max);
     }
     pcl::RangeImagePlanar::Ptr cloud(new pcl::RangeImagePlanar);
-    cloud_worker->begin([cloud, &depth] {
-        cloud->setDepthImage(depth.ptr<unsigned short>(), depth.size().width, depth.size().height, depth.size().width / 2, depth.size().height / 2, 517, 517);
+    cloud_worker->begin([cloud, &depth, this] {
+        cloud->setDepthImage(depth.ptr<unsigned short>(), width, height, center_x, center_y, focal_x, focal_y);
     });
     const double alpha = 250.0 / (depth_max - depth_min);
     const double beta = -depth_min * alpha + 5;

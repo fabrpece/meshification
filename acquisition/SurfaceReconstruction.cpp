@@ -80,8 +80,7 @@ void SurfaceReconstruction::operator()(const std::vector<cv::Vec6f>& triangles, 
     mesh_builder_.reset(new MeshBuilder(cloud));
     mesh2d = cv::Mat(depth.size(), CV_8UC1);
     mesh2d.setTo(0);
-    for (size_t i = 0; i < triangles.size(); ++i) {
-        const cv::Vec6f& t = triangles[i];
+    for (const auto& t : triangles) {
         std::vector<cv::Point> pt(3);
         for (int j = 0; j < 3; ++j)
             pt[j] = cv::Point(t[2 * j], t[2 * j + 1]);

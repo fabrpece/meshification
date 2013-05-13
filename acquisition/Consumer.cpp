@@ -173,6 +173,10 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_ENUM));
     network_stream.Write(RakNet::RakString(name.c_str()));
+    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 2));
+    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 2));
+    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 0));
+    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 1));
     network_stream.Write(modelview);
     network_stream.Write(static_cast<int>(model_string.size()));
     network_stream.Write(model_string.data(), model_string.size());
