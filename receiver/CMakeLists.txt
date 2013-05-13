@@ -21,4 +21,7 @@ if (WIN32)
 	target_link_libraries(receiver ws2_32)
 endif()
 
-install(TARGETS receiver RUNTIME DESTINATION .)
+install(TARGETS receiver
+    RUNTIME DESTINATION .
+    ARCHIVE DESTINATION .
+)
