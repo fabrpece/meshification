@@ -209,7 +209,7 @@
 /*   you do not have enough memory.                                          */
 
 /* #define SINGLE */
-#define SINGLE
+#define DOUBLE
 
 #ifdef SINGLE
 #define REAL float

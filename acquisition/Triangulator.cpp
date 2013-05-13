@@ -21,7 +21,7 @@
 #include <unordered_set>
 #include <opencv2/opencv.hpp>
 #include <pcl/range_image/range_image_planar.h>
-#define REAL float
+#define REAL double
 #define VOID void
 #define ANSI_DECLARATORS
 #include "triangle.h"
