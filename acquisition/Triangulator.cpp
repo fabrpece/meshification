@@ -298,6 +298,10 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
             const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
             p[j] = cv::Point2f(ptr[0], ptr[1]);
         }
+        if (!std::isfinite(p[0].x) || !std::isfinite(p[0].y) ||
+                !std::isfinite(p[1].x) || !std::isfinite(p[1].y) ||
+                !std::isfinite(p[2].x) || !std::isfinite(p[2].y))
+            continue;
         if (cloud->isValid(p[0].x, p[0].y) == false &&
                 cloud->isValid(p[1].x, p[1].y) == false &&
                 cloud->isValid(p[2].x, p[2].y) == false)
