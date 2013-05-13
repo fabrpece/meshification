@@ -38,7 +38,7 @@ inline bool isNan(const T& v)
 }
 
 int triunsuitable(REAL* triorg, REAL* tridest, REAL* triapex, REAL area)
-try {
+{
     if (area < min_area)
         return 0;
     if (cloud.get() == 0)
@@ -104,9 +104,6 @@ try {
     } else {
         return 0;
     }
-} catch (const std::exception& e) {
-    std::cerr << __func__ << " exception: " << e.what() << std::endl;
-    return 0;
 }
 
 class Segment
@@ -218,7 +215,7 @@ void Triangulator::add_contour(const std::vector<cv::Point>& contour)
             idx = p_->points.size() / 2 - 1;
         }
     }
-    p_->segments.reserve(n_points * 2);
+    /*p_->segments.reserve(n_points * 2);
     for (size_t i = 0; i < contour.size(); ++i) {
         const int i1 = i, i2 = i == contour.size() - 1 ? 0 : i + 1;
         const int& idx1 = p_->indices.at<int>(contour[i1]);
@@ -227,7 +224,7 @@ void Triangulator::add_contour(const std::vector<cv::Point>& contour)
             p_->segments.push_back(idx1);
             p_->segments.push_back(idx2);
         }
-    }
+    }*/
     p_->in.numberofpoints = p_->points.size() / 2;
     p_->in.pointlist = &p_->points[0];
     p_->in.numberofsegments = p_->segments.size() / 2;
@@ -243,15 +240,13 @@ void Triangulator::add_hole(const cv::Point2d& p)
 }
 
 void Triangulator::operator()()
-{
+try {
     std::ostringstream flags_stream;
-    flags_stream << "zpuQ";
+    flags_stream << "QXzu";
     const std::string flags = flags_stream.str();
-    try {
-        triangulate(const_cast<char*>(flags.c_str()), &p_->in, &p_->out, 0);
-    } catch (int) {
-        p_->out.numberoftriangles = 0;
-    }
+    triangulate(const_cast<char*>(flags.c_str()), &p_->in, &p_->out, 0);
+} catch (int) {
+    p_->out.numberoftriangles = 0;
 }
 
 static cv::Point median_point(const cv::Point* p)
@@ -264,26 +259,25 @@ static cv::Point median_point(const cv::Point* p)
 
 void Triangulator::draw(cv::Mat& output) const
 {
-    for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
+    for (int i = 0; i < p_->out.numberoftriangles; ++i) {
         const int* tri_p = &p_->out.trianglelist[3 * i];
         cv::Point p[3];
         for (int j = 0; j < 3; ++j) {
             const REAL* ptr = &p_->out.pointlist[2 * tri_p[j]];
             p[j] = cv::Point(ptr[0], ptr[1]);
         }
-        cv::Scalar color(200);
+        cv::Scalar color(0, 200, 0);
         if (cloud->isValid(p[0].x, p[0].y) && cloud->isValid(p[1].x, p[1].y) && cloud->isValid(p[2].x, p[2].y)) {
             color = cv::Scalar(0, 0, 200);
             const auto pm = ::median_point(p);
             if (cloud->isValid(pm.x, pm.y))
                 cv::circle(output, pm, 1, cv::Scalar(0, 200, 0));
         }
+        if (cloud->isValid(p[0].x, p[0].y) == false && cloud->isValid(p[1].x, p[1].y) == false && cloud->isValid(p[2].x, p[2].y) == false)
+            color = cv::Scalar(200, 0, 0);
         cv::line(output, p[0], p[1], color);
         cv::line(output, p[1], p[2], color);
         cv::line(output, p[0], p[2], color);
-    } catch (const std::exception& e) {
-        std::cerr << __func__ << " exception: " << e.what() << std::endl;
-        continue;
     }
 }
 
@@ -291,7 +285,7 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
 {
     std::vector<cv::Vec6f> triangles;
     triangles.reserve(p_->out.numberoftriangles);
-    for (int i = 0; i < p_->out.numberoftriangles; ++i) try {
+    for (int i = 0; i < p_->out.numberoftriangles; ++i) {
         const int* tri_p = &p_->out.trianglelist[3 * i];
         cv::Point2f p[3];
         for (int j = 0; j < 3; ++j) {
@@ -313,9 +307,6 @@ std::vector<cv::Vec6f> Triangulator::get_triangles() const
             t[2 * j + 1] = ptr[1];
         }
         triangles.push_back(t);
-    } catch (const std::exception& e) {
-        std::cerr << __func__ << " exception: " << e.what() << std::endl;
-        continue;
     }
     return triangles;
 }
