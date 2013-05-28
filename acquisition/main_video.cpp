@@ -49,6 +49,7 @@ struct Options
     }
 };
 
+const
 void parseArgs(int argc, char** argv, Options& opts)
 {
 
@@ -90,6 +91,12 @@ void parseArgs(int argc, char** argv, Options& opts)
         else
             std::cout << "Unknown parameter " << argv[i] << std::endl;
     }
+}
+
+const
+void buildMesh()
+{
+
 }
 
 int main(int argc, char** argv)

@@ -75,6 +75,7 @@ int main(int argc, char** argv)
 try {
     std::string address, name, camera_calibration;
     int width, height, cam_id;
+    bool do3Drec;
     namespace po = boost::program_options;
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -85,7 +86,6 @@ try {
             ("height,H", po::value<int>(&height)->default_value(480), "Range image height")
             ("camera_id,i", po::value<int>(&cam_id)->default_value(0), "Index of the camera")
             ("name,n", po::value<std::string>(&name)->default_value("default"));
-
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

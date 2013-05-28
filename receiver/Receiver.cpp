@@ -1,11 +1,12 @@
 #include <iostream>
 #include <sstream>
 #include <list>
+#include <algorithm>
 #include <pcl/range_image/range_image_planar.h>
-#include <RakNet/RakPeerInterface.h>
-#include <RakNet/MessageIdentifiers.h>
-#include <RakNet/BitStream.h>
-#include <RakNet/RakSleep.h>
+#include <RakPeerInterface.h>
+#include <MessageIdentifiers.h>
+#include <BitStream.h>
+#include <RakSleep.h>
 #include <Eigen/Core>
 #include "Receiver.hpp"
 #include "VideoDecoder.hpp"
@@ -63,7 +64,8 @@ static void compute_normals(Data3d& data)
         n.col(i).normalize();
 }
 
-Receiver::Receiver()
+Receiver::Receiver() :
+    is_running(false)
 {}
 
 Receiver::~Receiver()
@@ -208,9 +210,19 @@ void Receiver::draw()
         m.second->draw();
 }
 
+/*
+static
+bool functor (std::unordered_map<std::uint64_t, std::shared_ptr<Model> > m) {
+  return m.second->get_name() == name;
+}
+*/
+
 void Receiver::translate(const std::string& name, const double x, const double y, const double z)
 {
-    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+
+    auto it = std::find_if(models.begin(), models.end(),
+    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+    {
         return m.second->get_name() == name;
     });
     if (it == models.end()) {
@@ -222,7 +234,10 @@ void Receiver::translate(const std::string& name, const double x, const double y
 
 void Receiver::rotate(const std::string& name, const double rad, const double x, const double y, const double z)
 {
-    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+
+    auto it = std::find_if(models.begin(), models.end(),
+    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+    {
         return m.second->get_name() == name;
     });
     if (it == models.end()) {
@@ -234,7 +249,9 @@ void Receiver::rotate(const std::string& name, const double rad, const double x,
 
 void Receiver::reset_position(const std::string &name)
 {
-    auto it = std::find_if(models.begin(), models.end(), [&name](const decltype(models)::value_type& m) {
+    auto it = std::find_if(models.begin(), models.end(),
+    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+    {
         return m.second->get_name() == name;
     });
     if (it == models.end()) {

@@ -23,11 +23,12 @@
 #include <functional>
 #include <boost/thread.hpp>
 
+typedef boost::unique_lock<boost::mutex> lock;
+
 class AsyncWorker
 {
     std::function<void()> operation;
     boost::mutex m;
-    using lock = boost::unique_lock<boost::mutex>;
     boost::condition_variable c_ready, c_finished;
     bool is_running;
     boost::thread t;

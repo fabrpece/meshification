@@ -21,8 +21,8 @@
 #include <opencv2/opencv.hpp>
 #include <pcl/range_image/range_image_planar.h>
 #include <pcl/features/integral_image_normal.h>
-#include <pcl/features/organized_edge_detection.h>
-#include <pcl/2d/edge.h>
+//#include <pcl/features/organized_edge_detection.h>
+//#include <pcl/2d/edge.h>
 #include "DepthFilter.hpp"
 
 DepthFilter::DepthFilter(const int w, const int h) :
@@ -59,7 +59,7 @@ void DepthFilter::operator()(char* color_buffer, unsigned short* depth_buffer, c
     pcl::IntegralImageNormalEstimation<pcl::RangeImagePlanar::PointType, pcl::Normal> ne;
     ne.setNormalEstimationMethod(ne.AVERAGE_DEPTH_CHANGE);
     ne.setNormalSmoothingSize(10.0f);
-    ne.setBorderPolicy(ne.BORDER_POLICY_IGNORE);
+    //ne.setBorderPolicy(ne.BORDER_POLICY_IGNORE);
     ne.setInputCloud(cloud);
     pcl::PointCloud<pcl::Normal>::Ptr normal_cloud(new pcl::PointCloud<pcl::Normal>);
     ne.compute(*normal_cloud);

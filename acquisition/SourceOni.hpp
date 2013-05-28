@@ -19,6 +19,7 @@
 */
 
 #include <memory>
+#include <iostream>
 #include "Source.hpp"
 
 namespace xn {
@@ -38,4 +39,7 @@ public:
     SourceOni(const char* filename);
     ~SourceOni();
     void grab(char* rgb, char* depth);
+    int getWidth(){return 640;}
+    int getHeigth(){return 480;}
+    void setWidthHeight(const int _w,const int _h){std::cerr << "Warning! Cannot set width and height for a Kinect camera." << std::endl;}
 };

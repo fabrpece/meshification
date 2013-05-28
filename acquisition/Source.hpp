@@ -22,4 +22,7 @@ class Source
 {
 public:
     virtual void grab(char* rgb, char* depth) = 0;
+    virtual int getWidth() = 0;
+    virtual int getHeigth() = 0;
+    virtual void setWidthHeight(const int _w,const int _h) = 0;
 };

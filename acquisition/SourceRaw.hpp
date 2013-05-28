@@ -23,9 +23,16 @@
 
 class SourceRaw : public Source
 {
-    const int width, height, size;
+    int width, height, size;
     std::ifstream depth_stream, rgb_stream;
 public:
     SourceRaw(int w, int h, const std::string& name);
     void grab(char* rgb, char* depth);
+    int getWidth(){return width;}
+    int getHeigth(){return height;}
+    void setWidthHeight(const int _w,const int _h){
+        width = _w;
+        height = _h;
+        size = width * height;
+    }
 };

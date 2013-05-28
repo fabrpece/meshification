@@ -7,7 +7,8 @@
 #include "Model.hpp"
 #include "Data3d.hpp"
 
-Model::Model()
+Model::Model() :
+    n_elements(0)
 {
     glGenVertexArrays(1, vao);
     glGenBuffers(n_vbo, vbo);

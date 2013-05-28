@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <Eigen/Core>
 
 class VideoEncoder;
 class AsyncWorker;
@@ -37,11 +38,11 @@ class MarkerDetector;
 
 class Consumer
 {
-    bool use_marker_tracking = false;
+    bool use_marker_tracking;
     std::string ip_address, name;
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
-    bool is_connected = false;
+    bool is_connected;
 
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
@@ -52,10 +53,17 @@ class Consumer
 
     void connect();
 
+    void computeCameraBoardVertices(std::vector<Eigen::Vector3d>& ver,
+                                    std::vector<Eigen::Vector2d>& tex,
+                                    float focal_length = 1.0f);
+
 public:
-    Consumer(const int w, const int h, const std::string& address, const std::string& name = "default");
+    Consumer(const int w, const int h, const std::string& address,
+             const std::string& name = "default",
+             const std::string& calib_file = "cam.yml");
     ~Consumer();
     void operator()(const std::vector<float>& ver, const std::vector<unsigned>& tri, const std::vector<char>& rgb);
+    void operator()(const std::vector<char>& rgb);
     void enable_marker_tracking(const bool b) {
         use_marker_tracking = b;
     }

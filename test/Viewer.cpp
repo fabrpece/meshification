@@ -39,13 +39,14 @@ void Viewer::init()
     glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
     glLightfv(GL_LIGHT0, GL_POSITION, position);
     setSceneCenter(qglviewer::Vec(0, 0, 4));
-    setSceneRadius(5);
-    camera()->fitSphere(qglviewer::Vec(0, 0, 4), 5);
+    setSceneRadius(15);
+    camera()->fitSphere(qglviewer::Vec(0, 0, 4), 15);
     camera()->setFOVToFitScene();
     startAnimation();
 
     xvr_receiver_init();
-    xvr_receiver_load_static("test2.ply");
+    //xvr_receiver_load_static("pisa_downsampled_bin3.ply");
+    xvr_receiver_load_panorama("pano");
 }
 
 void Viewer::draw()

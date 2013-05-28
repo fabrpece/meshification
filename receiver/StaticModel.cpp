@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include <GL/glew.h>
+#include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Core>

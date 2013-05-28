@@ -10,13 +10,14 @@
 class Model;
 struct Data3d;
 
+typedef boost::mutex Mutex;
+typedef boost::unique_lock<Mutex> Lock;
+
 class Receiver
 {
     boost::thread t;
-    bool is_running = false;
+    bool is_running;
 
-    using Mutex = boost::mutex;
-    using Lock = boost::unique_lock<Mutex>;
     Mutex m;
     std::unordered_set<std::uint64_t> new_models;
     std::unordered_set<std::uint64_t> delete_models;
