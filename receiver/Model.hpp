@@ -10,6 +10,7 @@ class Model
     size_t n_elements;
     float model_matrix[16], matrix[16];
     std::string name;
+    bool fromCamera;
 
     Model(const Model&);
     Model& operator=(const Model&);

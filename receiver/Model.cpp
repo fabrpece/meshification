@@ -8,7 +8,8 @@
 #include "Data3d.hpp"
 
 Model::Model() :
-    n_elements(0)
+    n_elements(0),
+    fromCamera(false)
 {
     glGenVertexArrays(1, vao);
     glGenBuffers(n_vbo, vbo);
@@ -45,8 +46,14 @@ void Model::draw() const
     if (n_elements == 0)
         return;
     GLint front_face;
+    GLboolean cull_face;
     glGetIntegerv(GL_FRONT_FACE, &front_face);
+    glGetBooleanv(GL_CULL_FACE, &cull_face);
+
     glFrontFace(GL_CW);
+    if(fromCamera)
+        glDisable(GL_CULL_FACE);
+
     glBindVertexArray(vao[0]);
     glBindTexture(GL_TEXTURE_2D, tex[0]);
     glPushMatrix();
@@ -56,6 +63,8 @@ void Model::draw() const
     glPopMatrix();
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
+    if(cull_face && fromCamera)
+        glEnable(GL_CULL_FACE);
     glFrontFace(front_face);
 }
 
@@ -82,6 +91,12 @@ void Model::load(const Data3d& data)
         return;
     if (data.name != name) {
         name = data.name;
+        std::size_t found = name.find(std::string("camera"));
+        if (found!=std::string::npos)
+        {
+            fromCamera = true;
+            std::cout << "From camera: " << name << std::endl;
+        }
         std::ifstream calibration("calib_" + name + ".txt");
         if (calibration.is_open())
             for (int i = 0; i < 16; ++i)

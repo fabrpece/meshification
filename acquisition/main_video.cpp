@@ -35,6 +35,7 @@ struct Options
     int camera_w;
     int camera_h;
     bool verbose;
+    bool use_marker;
     std::string calibfile;
     std::string address;
 
@@ -44,6 +45,7 @@ struct Options
         camera_w = 640;
         camera_h = 480;
         verbose = false;
+        use_marker = false;
         calibfile = std::string("calib_kin_srl.yml");
         address = std::string("127.0.0.1");
     }
@@ -123,7 +125,10 @@ int main(int argc, char** argv)
         const int height = camera->getHeigth();
         cv::namedWindow(win_name, CV_WINDOW_AUTOSIZE);
 
-        Consumer consume(width, height, opts.address, std::string("video"), opts.calibfile);
+        std::stringstream peer_name;
+        peer_name << "camera_" << opts.camera_id << std::flush;
+
+        Consumer consume(width, height, opts.address, std::string(peer_name.str()), opts.calibfile);
 
         char buffer_depth[2 * width * height];
         std::vector<char> buffer_rgb(3 * width * height);
@@ -137,15 +142,27 @@ int main(int argc, char** argv)
                 consume(buffer_rgb);
             });
 
-
             cv::Mat img_color(height, width, CV_8UC3, buffer_rgb.data());
             cv::imshow(win_name, img_color);
             const int c = cv::waitKey(15);
             if (c == 'v')
+            {
                 opts.verbose = !opts.verbose;
+                cv::displayOverlay(win_name, std::string("Verbose ") + (opts.verbose ? "ON" : "OFF"), 1000);
+            }
             else if (c == 27 || c == 'q') {
                 break;
             }
+            else if (c == 'm') {
+                opts.use_marker = !opts.use_marker;
+                consume.enable_marker_tracking(opts.use_marker);
+                cv::displayOverlay(win_name, std::string("Market tracking ") + (opts.use_marker ? "enabled" : "disabled"), 1000);
+            }
+            else if (c == 'p') {
+                consume.save_view();
+                cv::displayOverlay(win_name, "Marker view saved.", 1000);
+            }
+
             if(opts.verbose)
             {
                 const auto t1 = myclock::now();

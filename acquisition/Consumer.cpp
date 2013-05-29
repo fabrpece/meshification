@@ -370,8 +370,8 @@ void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
     tex.push_back(t4[0]);       tex.push_back(t4[1]);
     tex.push_back(t5[0]);       tex.push_back(t5[1]);
 
-    tri.push_back(1); tri.push_back(3); tri.push_back(2);
-    tri.push_back(2); tri.push_back(3); tri.push_back(4);
+    tri.push_back(1); tri.push_back(2); tri.push_back(3);
+    tri.push_back(2); tri.push_back(4); tri.push_back(3);
 }
 
 /*
