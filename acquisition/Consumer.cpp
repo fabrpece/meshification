@@ -51,7 +51,8 @@ Consumer::Consumer(const int w, const int h, const string &address, const string
     async_video(new AsyncWorker),
     async_marker(new AsyncWorker),
     use_marker_tracking(false),
-    is_connected(false)
+    is_connected(false),
+    videoInfoSent(false)
 {
     auto socket = RakNet::SocketDescriptor();
     peer->Startup(1, &socket, 1);
@@ -71,6 +72,7 @@ Consumer::~Consumer()
 
 void Consumer::connect()
 {
+    std::cout << "Trying connection to " << ip_address << "::12345" << std::endl;
     peer->Connect(ip_address.c_str(), 12345, 0, 0);
 }
 
@@ -238,6 +240,19 @@ void Consumer::operator()(const std::vector<char>& rgb)
     if (is_connected == false)
         return;
 
+    /*
+    if(!videoInfoSent)
+    {
+        RakNet::BitStream network_stream;
+        network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_CAM));
+        network_stream.Write(RakNet::RakString(name.c_str()));
+        network_stream.Write(cam_params->CamSize.width);
+        network_stream.Write(cam_params->CamSize.height);
+        videoInfoSent = true;
+        return;
+    }
+    */
+
     std::string video_string;
     async_video->begin([this, rgb, &video_string] {
         std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
@@ -271,71 +286,137 @@ void Consumer::operator()(const std::vector<char>& rgb)
     async_marker->end();
     async_video->end();
 
-    std::vector<Eigen::Vector3d> ver;
-    std::vector<Eigen::Vector2d> tex;
-    computeCameraBoardVertices(ver,tex);
+    std::vector<float> ver;
+    std::vector<float> tex;
+    std::vector<unsigned> tri;
+    computeCameraBoardVertices(ver,tex, tri);
     std::stringstream model_stream(std::ios::in | std::ios::out | std::ios::binary);
-    const int n_ver = ver.size();
-    const int n_tex = ver.size();
+    const int n_ver = ver.size() / 3;
+    const int n_tri = tri.size() / 3;
+    const int n_tex = tex.size() / 2 ;
     model_stream.write((const char*)&n_ver, sizeof(n_ver));
     model_stream.write((const char*)&ver[0], ver.size() * sizeof(float));
     model_stream.write((const char*)&n_tex, sizeof(n_tex));
     model_stream.write((const char*)&tex[0], tex.size() * sizeof(float));
+    model_stream.write((const char*)&n_tri, sizeof(n_tri));
+    model_stream.write((const char*)&tri[0], tri.size() * sizeof(unsigned));
     model_stream << std::flush;
     const std::string& model_string = model_stream.str();
 
     RakNet::BitStream network_stream;
     network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_VIDEO));
     network_stream.Write(RakNet::RakString(name.c_str()));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 2));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 2));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(0, 0));
-    network_stream.Write(cam_params->CameraMatrix.at<float>(1, 1));
+
+    network_stream.Write(cam_params->CamSize.width);
+    network_stream.Write(cam_params->CamSize.height);
     network_stream.Write(modelview);
-    network_stream.Write(static_cast<int>(model_string.size()));
-    network_stream.Write(model_string.data(), model_string.size());
+
     network_stream.Write(static_cast<int>(video_string.size()));
     network_stream.Write(video_string.data(), video_string.size());
+
+    network_stream.Write(static_cast<int>(model_string.size()));
+    network_stream.Write(model_string.data(), model_string.size());
+
     peer->Send(&network_stream, LOW_PRIORITY, UNRELIABLE, 0, *address, false);
     //std::cout << "Model Size: " << model_size * 30 * 8 / 1024.0 <<  "kbps Video Size: " << video_size * 30 * 8 / 1024.0 << "kbps" << std::endl;
 }
 
-void Consumer::computeCameraBoardVertices(std::vector<Eigen::Vector3d>& ver, std::vector<Eigen::Vector2d>& tex, float focal_length)
+
+void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
+                                          std::vector<float>& tex,
+                                          std::vector<unsigned>& tri,
+                                          float focal_length)
 {
     ver.clear();
     tex.clear();
-    Eigen::Vector3d cam_pos = Eigen::Vector3d::Zero();
-    Eigen::Vector3d p1,p2,p3,p4,p5;
-    Eigen::Vector2d t1,t2,t3,t4;
-    p1 <<   0,                               0,                               1;
-    p2 <<   cam_params->CamSize.width,       0,                               1;
-    p3 <<   0,                               cam_params->CamSize.height,      1;
-    p4 <<   cam_params->CamSize.width,       cam_params->CamSize.height,      1;
-    p5 <<   cam_params->CamSize.width/2,     cam_params->CamSize.height/2,    1; //this is the center of the frustum
+    tri.clear();
+    Eigen::Vector3f cam_pos, p1,p2,p3,p4,p5;
+    Eigen::Vector2f t1,t2,t3,t4, t5;
+
+    cam_pos <<   0.0, 0.0, 1.0;
+    p1 <<   0.0, 0.0, 1.0;
+    p2 <<   cam_params->CamSize.width, 0.0, 1.0;
+    p3 <<   0.0, cam_params->CamSize.height, 1.0;
+    p4 <<   cam_params->CamSize.width, cam_params->CamSize.height, 1.0;
+    p5 <<   cam_params->CamSize.width*0.5, cam_params->CamSize.height*0.5, 1.0; //this is the center of the frustum
     //...in camera coordinates
-    Eigen::Vector3d xc1,xc2,xc3,xc4,xc5;
-    Eigen::Matrix3d K = Eigen::Matrix3d::Zero();
+    Eigen::Vector3f xc1,xc2,xc3,xc4,xc5;
+    Eigen::Matrix3f K = Eigen::Matrix3f::Zero();
     cv::cv2eigen(cam_params->CameraMatrix,K);
     xc1 = (K.inverse() * p1) * focal_length;
     xc2 = (K.inverse() * p2) * focal_length;
     xc3 = (K.inverse() * p3) * focal_length;
     xc4 = (K.inverse() * p4) * focal_length;
     xc5 = (K.inverse() * p5) * focal_length;
-    t1 << 1.0, 1.0;
-    t2 << 0.0, 1.0;
+
+    t1 << 0.0, 1.0;
+    t2 << 1.0, 1.0;
     t3 << 0.0, 0.0;
     t4 << 1.0, 0.0;
-    ver.push_back(cam_pos);
-    ver.push_back(xc1);
-    ver.push_back(xc2);
-    ver.push_back(xc3);
-    ver.push_back(xc4);
-    ver.push_back(xc5);
-    tex.push_back(t1);
-    tex.push_back(t2);
-    tex.push_back(t3);
-    tex.push_back(t4);
+    t5 << 0.5, 0.5;
+
+
+    ver.push_back(cam_pos[0]);  ver.push_back(cam_pos[1]);  ver.push_back(cam_pos[2]);
+    ver.push_back(xc1[0]);      ver.push_back(xc1[1]);      ver.push_back(xc1[2]);
+    ver.push_back(xc2[0]);      ver.push_back(xc2[1]);      ver.push_back(xc2[2]);
+    ver.push_back(xc3[0]);      ver.push_back(xc3[1]);      ver.push_back(xc3[2]);
+    ver.push_back(xc4[0]);      ver.push_back(xc4[1]);      ver.push_back(xc4[2]);
+    ver.push_back(xc5[0]);      ver.push_back(xc5[1]);      ver.push_back(xc5[2]);
+
+    tex.push_back(0);           tex.push_back(0);
+    tex.push_back(t1[0]);       tex.push_back(t1[1]);
+    tex.push_back(t2[0]);       tex.push_back(t2[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t4[0]);       tex.push_back(t4[1]);
+    tex.push_back(t5[0]);       tex.push_back(t5[1]);
+
+    tri.push_back(1); tri.push_back(3); tri.push_back(2);
+    tri.push_back(2); tri.push_back(3); tri.push_back(4);
 }
+
+/*
+void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
+                                          std::vector<float>& tex,
+                                          std::vector<unsigned>& tri,
+                                          float focal_length)
+{
+
+    ver.clear();
+    tex.clear();
+    tri.clear();
+    Eigen::Vector3f cam_pos, p1,p2,p3,p4,p5;
+    Eigen::Vector2f t1,t2,t3,t4, t5;
+    cam_pos <<   0.0, 0.0, 1.0;
+    p1 <<   0.0, 0.0, 1.0;
+    p2 <<   1.0, 0.0, 1.0;
+    p3 <<   0.0, 1.0, 1.0;
+    p4 <<   1.0, 1.0, 1.0;
+    p5 <<   .5,.5,1; //this is the center of the frustum
+    t1 << 0.0, 1.0;
+    t2 << 1.0, 1.0;
+    t3 << 0.0, 0.0;
+    t4 << 1.0, 0.0;
+    t5 << 0.5, 0.5;
+    ver.push_back(cam_pos[0]);  ver.push_back(cam_pos[1]);  ver.push_back(cam_pos[2]);
+
+    ver.push_back(p1[0]);      ver.push_back(p1[1]);      ver.push_back(p1[2]);
+    ver.push_back(p2[0]);      ver.push_back(p2[1]);      ver.push_back(p2[2]);
+    ver.push_back(p3[0]);      ver.push_back(p3[1]);      ver.push_back(p3[2]);
+    ver.push_back(p4[0]);      ver.push_back(p4[1]);      ver.push_back(p4[2]);
+    ver.push_back(p5[0]);      ver.push_back(p5[1]);      ver.push_back(p5[2]);
+
+    tex.push_back(0);           tex.push_back(0);
+    tex.push_back(t1[0]);       tex.push_back(t1[1]);
+    tex.push_back(t2[0]);       tex.push_back(t2[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t4[0]);       tex.push_back(t4[1]);
+    tex.push_back(t5[0]);       tex.push_back(t5[1]);
+
+    tri.push_back(1); tri.push_back(3); tri.push_back(2);
+    tri.push_back(2); tri.push_back(3); tri.push_back(4);
+
+}
+*/
 
 void Consumer::save_view()
 {

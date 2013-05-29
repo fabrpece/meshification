@@ -14,6 +14,7 @@
 #include "Data3d.hpp"
 #include "../3dzip/3dzip/Reader.hh"
 #include "../common/AsyncWorker.hpp"
+#include "../common/PacketID.hpp"
 
 struct Peer
 {
@@ -173,6 +174,58 @@ void Receiver::run()
             });
             break;
         }
+        case ID_USER_PACKET_VIDEO: {
+            auto peer = peers[p->guid.g];
+            peer->worker.begin([p, peer, this] {
+
+                int cam_width, cam_height;
+                RakNet::BitStream bs(p->data, p->length, false);
+                bs.IgnoreBytes(sizeof(RakNet::MessageID));
+                RakNet::RakString name;
+                bs.Read(name);
+                bs.Read(cam_width);
+                bs.Read(cam_height);
+                auto data = std::make_shared<Data3d>(cam_width, cam_height);
+                bs.Read(data->modelview);
+                data->name = name.C_String();
+                int size_vid;
+                bs.Read(size_vid);
+                std::vector<char> buffer_vid(size_vid);
+                buffer_vid.resize(size_vid);
+                bs.Read(buffer_vid.data(), size_vid);
+                std::istringstream in_video(std::string(buffer_vid.begin(), buffer_vid.end()), std::ios::in | std::ios::binary);
+                peer->video_worker.begin([&] {
+                    peer->decoder(in_video, &data->bgr[0]);
+                });
+
+                int size_mod;
+                bs.Read(size_mod);
+                std::vector<char> buffer_mod(size_mod);
+                bs.Read(buffer_mod.data(), size_mod);
+                std::istringstream in(std::string(buffer_mod.begin(), buffer_mod.end()), std::ios::in | std::ios::binary);
+
+                int n_vertices, n_tex, n_triangles;
+
+                in.read((char*)&n_vertices, sizeof(n_vertices));
+                data->ver.resize(3 * n_vertices);
+                in.read((char*)&data->ver[0], data->ver.size() * sizeof(float));
+
+                in.read((char*)&n_tex, sizeof(n_tex));
+                data->tex.resize(2 * n_tex);
+                in.read((char*)&data->tex[0], data->tex.size() * sizeof(float));
+
+                in.read((char*)&n_triangles, sizeof(n_triangles));
+                data->tri.resize(3 * n_triangles);
+                in.read((char*)&data->tri[0], data->tri.size() * sizeof(unsigned));
+
+                peer->video_worker.end();
+
+                Lock l(m);
+                updates[p->guid.g] = data;
+
+            });
+            break;
+        }
         }
     }
 }
@@ -208,23 +261,17 @@ void Receiver::draw()
 
     for (const auto& m : models)
         m.second->draw();
-}
 
-/*
-static
-bool functor (std::unordered_map<std::uint64_t, std::shared_ptr<Model> > m) {
-  return m.second->get_name() == name;
 }
-*/
 
 void Receiver::translate(const std::string& name, const double x, const double y, const double z)
 {
 
     auto it = std::find_if(models.begin(), models.end(),
-    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+                           [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
     {
-        return m.second->get_name() == name;
-    });
+            return m.second->get_name() == name;
+});
     if (it == models.end()) {
         std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;
@@ -236,10 +283,10 @@ void Receiver::rotate(const std::string& name, const double rad, const double x,
 {
 
     auto it = std::find_if(models.begin(), models.end(),
-    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+                           [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
     {
-        return m.second->get_name() == name;
-    });
+            return m.second->get_name() == name;
+});
     if (it == models.end()) {
         std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;
@@ -250,10 +297,10 @@ void Receiver::rotate(const std::string& name, const double rad, const double x,
 void Receiver::reset_position(const std::string &name)
 {
     auto it = std::find_if(models.begin(), models.end(),
-    [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
+                           [&name](std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::value_type const& m)
     {
-        return m.second->get_name() == name;
-    });
+            return m.second->get_name() == name;
+});
     if (it == models.end()) {
         std::cerr << "WARNING: Model " << name << " not found" << std::endl;
         return;

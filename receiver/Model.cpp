@@ -59,9 +59,25 @@ void Model::draw() const
     glFrontFace(front_face);
 }
 
+const
+void printValues(const Data3d& data)
+{
+    std::cout << "Num elements: " << data.tri.size() << std::endl;
+    std::cout << "Index: " << std::endl;
+    for(int i=0; i<data.tri.size(); i+=3)
+        std::cout << data.tri[i] << ' ' << data.tri[i+1] << ' ' << data.tri[i+2] << ' ' << std::endl;
+    std::cout << "Vertex: " << std::endl;
+    for(int i=0; i<data.ver.size(); i+=3)
+        std::cout << data.ver[i] << ' ' << data.ver[i+1] << ' ' << data.ver[i+2] << ' ' << std::endl;
+    std::cout << "Textures: " << std::endl;
+    for(int i=0; i<data.tex.size(); i+=2)
+        std::cout << data.tex[i] << ' ' << data.tex[i+1] << std::endl;
+}
+
 void Model::load(const Data3d& data)
 {
     n_elements = data.tri.size();
+
     if (n_elements == 0)
         return;
     if (data.name != name) {

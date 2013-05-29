@@ -9,7 +9,6 @@
 
 class Model;
 struct Data3d;
-
 typedef boost::mutex Mutex;
 typedef boost::unique_lock<Mutex> Lock;
 
@@ -22,7 +21,6 @@ class Receiver
     std::unordered_set<std::uint64_t> new_models;
     std::unordered_set<std::uint64_t> delete_models;
     std::unordered_map<std::uint64_t, std::shared_ptr<Data3d>> updates;
-
     std::unordered_map<std::uint64_t, std::shared_ptr<Model>> models;
 
     void run();

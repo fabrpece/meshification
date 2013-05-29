@@ -40,7 +40,7 @@ void xvr_receiver_init()
 void xvr_receiver_draw()
 {
     p->draw();
-    panorama->draw();
+    //panorama->draw();
     for (const auto& m : static_models)
         m.draw();
 }

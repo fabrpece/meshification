@@ -75,7 +75,6 @@ int main(int argc, char** argv)
 try {
     std::string address, name, camera_calibration;
     int width, height, cam_id;
-    bool do3Drec;
     namespace po = boost::program_options;
     po::options_description desc("Allowed options");
     desc.add_options()

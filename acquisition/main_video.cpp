@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     try {
             Options opts;
             if (argc < 2) {
-                std::cerr << "Usage: " << argv[0] << " --kinect|--webcam|filename{.depth} [--camID cameraID] [--calibFile calibFile] [--size w h] [--verbose]" << std::endl;
+                std::cerr << "Usage: " << argv[0] << " --kinect|--webcam|filename{.depth} [--camID cameraID] [--calibFile calibFile] [--ip ip] [--size w h] [--verbose]" << std::endl;
                 return 1;
             }
             else
@@ -127,20 +127,16 @@ int main(int argc, char** argv)
 
         char buffer_depth[2 * width * height];
         std::vector<char> buffer_rgb(3 * width * height);
-        std::vector<unsigned> tri;
-        std::vector<float> ver;
-        int markerID = 45;
         AsyncWorker consumer_thread;
+
         for (int frame_id = 0;; ++frame_id) {
 
             const auto t0 = myclock::now();
             camera->grab(buffer_rgb.data(), buffer_depth);
+            consumer_thread.begin([=, &consume]{
+                consume(buffer_rgb);
+            });
 
-            if (tri.empty() == false) {
-                consumer_thread.begin([=, &consume]{
-                    consume(ver, tri, buffer_rgb);
-                });
-            }
 
             cv::Mat img_color(height, width, CV_8UC3, buffer_rgb.data());
             cv::imshow(win_name, img_color);
@@ -153,7 +149,7 @@ int main(int argc, char** argv)
             if(opts.verbose)
             {
                 const auto t1 = myclock::now();
-                std::cout << "Frame: " << frame_id <<  " #T: " << tri.size() / 3 << ' ' <<
+                std::cout << "Frame: " << frame_id  << ' ' <<
                          std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms" << std::endl;
             }
         }

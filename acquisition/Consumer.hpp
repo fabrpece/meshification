@@ -43,6 +43,7 @@ class Consumer
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected;
+    bool videoInfoSent;
 
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
@@ -53,8 +54,9 @@ class Consumer
 
     void connect();
 
-    void computeCameraBoardVertices(std::vector<Eigen::Vector3d>& ver,
-                                    std::vector<Eigen::Vector2d>& tex,
+    void computeCameraBoardVertices(std::vector<float>& ver,
+                                    std::vector<float>& tex,
+                                    std::vector<unsigned>& tri,
                                     float focal_length = 1.0f);
 
 public:

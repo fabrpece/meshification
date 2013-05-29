@@ -46,7 +46,7 @@ void Viewer::init()
 
     xvr_receiver_init();
     //xvr_receiver_load_static("pisa_downsampled_bin3.ply");
-    xvr_receiver_load_panorama("pano");
+    //xvr_receiver_load_panorama("pano");
 }
 
 void Viewer::draw()
