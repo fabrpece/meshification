@@ -22,7 +22,7 @@
 #include "SourceKinect.hpp"
 
 SourceKinect::SourceKinect(const int id) :
-    kinect(new cv::VideoCapture(CV_CAP_OPENNI + id))
+    kinect(new cv::VideoCapture(CV_CAP_OPENNI_ASUS + id))
 {
     if (kinect->isOpened() == false)
         throw std::runtime_error("Unable to open the Kinect device");

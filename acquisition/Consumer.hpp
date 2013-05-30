@@ -43,7 +43,7 @@ class Consumer
     RakNet::RakPeerInterface* peer;
     std::unique_ptr<RakNet::SystemAddress> address;
     bool is_connected;
-    bool videoInfoSent;
+    bool showFrustum;
 
     std::unique_ptr<aruco::CameraParameters> cam_params;
     std::unique_ptr<aruco::MarkerDetector> marker_detector;
@@ -57,7 +57,11 @@ class Consumer
     void computeCameraBoardVertices(std::vector<float>& ver,
                                     std::vector<float>& tex,
                                     std::vector<unsigned>& tri,
-                                    float focal_length = 1.0f);
+                                    const float focal_length = 1.0f);
+    void computeCameraBoardWithFrustumVertices(std::vector<float>& ver,
+                                              std::vector<float>& tex,
+                                              std::vector<unsigned>& tri,
+                                              const float focal_length = 1.0f);
 
 public:
     Consumer(const int w, const int h, const std::string& address,
@@ -69,5 +73,11 @@ public:
     void enable_marker_tracking(const bool b) {
         use_marker_tracking = b;
     }
+    bool toogleFrustumDrawing()
+    {
+        showFrustum = !showFrustum;
+        return showFrustum;
+    }
+
     void save_view();
 };

@@ -162,6 +162,9 @@ int main(int argc, char** argv)
                 consume.save_view();
                 cv::displayOverlay(win_name, "Marker view saved.", 1000);
             }
+            else if (c == 'f') {
+                cv::displayOverlay(win_name, std::string("Frustum drawing ") + (consume.toogleFrustumDrawing() ? "enabled" : "disabled"), 1000);
+            }
 
             if(opts.verbose)
             {

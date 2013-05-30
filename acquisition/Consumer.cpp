@@ -52,7 +52,7 @@ Consumer::Consumer(const int w, const int h, const string &address, const string
     async_marker(new AsyncWorker),
     use_marker_tracking(false),
     is_connected(false),
-    videoInfoSent(false)
+    showFrustum(false)
 {
     auto socket = RakNet::SocketDescriptor();
     peer->Startup(1, &socket, 1);
@@ -240,19 +240,6 @@ void Consumer::operator()(const std::vector<char>& rgb)
     if (is_connected == false)
         return;
 
-    /*
-    if(!videoInfoSent)
-    {
-        RakNet::BitStream network_stream;
-        network_stream.Write(static_cast<RakNet::MessageID>(ID_USER_PACKET_CAM));
-        network_stream.Write(RakNet::RakString(name.c_str()));
-        network_stream.Write(cam_params->CamSize.width);
-        network_stream.Write(cam_params->CamSize.height);
-        videoInfoSent = true;
-        return;
-    }
-    */
-
     std::string video_string;
     async_video->begin([this, rgb, &video_string] {
         std::ostringstream video_stream(std::ios::in | std::ios::out | std::ios::binary);
@@ -289,7 +276,10 @@ void Consumer::operator()(const std::vector<char>& rgb)
     std::vector<float> ver;
     std::vector<float> tex;
     std::vector<unsigned> tri;
-    computeCameraBoardVertices(ver,tex, tri);
+    if(showFrustum)
+        computeCameraBoardWithFrustumVertices(ver,tex, tri);
+    else
+        computeCameraBoardVertices(ver,tex, tri);
     std::stringstream model_stream(std::ios::in | std::ios::out | std::ios::binary);
     const int n_ver = ver.size() / 3;
     const int n_tri = tri.size() / 3;
@@ -325,7 +315,7 @@ void Consumer::operator()(const std::vector<char>& rgb)
 void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
                                           std::vector<float>& tex,
                                           std::vector<unsigned>& tri,
-                                          float focal_length)
+                                          const float focal_length)
 {
     ver.clear();
     tex.clear();
@@ -333,7 +323,7 @@ void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
     Eigen::Vector3f cam_pos, p1,p2,p3,p4,p5;
     Eigen::Vector2f t1,t2,t3,t4, t5;
 
-    cam_pos <<   0.0, 0.0, 1.0;
+    cam_pos <<   0.0, 0.0, 0.0;
     p1 <<   0.0, 0.0, 1.0;
     p2 <<   cam_params->CamSize.width, 0.0, 1.0;
     p3 <<   0.0, cam_params->CamSize.height, 1.0;
@@ -370,8 +360,73 @@ void Consumer::computeCameraBoardVertices(std::vector<float>& ver,
     tex.push_back(t4[0]);       tex.push_back(t4[1]);
     tex.push_back(t5[0]);       tex.push_back(t5[1]);
 
-    tri.push_back(1); tri.push_back(2); tri.push_back(3);
-    tri.push_back(2); tri.push_back(4); tri.push_back(3);
+    tri.push_back(1); tri.push_back(2); tri.push_back(3); //lower left triangle of the board - CCW
+    tri.push_back(2); tri.push_back(4); tri.push_back(3); //upper right triangle of the board - CCW
+}
+
+void Consumer::computeCameraBoardWithFrustumVertices(std::vector<float>& ver,
+                                          std::vector<float>& tex,
+                                          std::vector<unsigned>& tri,
+                                          const float focal_length)
+{
+
+    ver.clear();
+    tex.clear();
+    tri.clear();
+    Eigen::Vector3f cam_pos, p1,p2,p3,p4,p5;
+    Eigen::Vector2f t1,t2,t3,t4, t5;
+
+    cam_pos <<   0.0, 0.0, 0.0;
+    p1 <<   0.0, 0.0, 1.0;
+    p2 <<   cam_params->CamSize.width, 0.0, 1.0;
+    p3 <<   0.0, cam_params->CamSize.height, 1.0;
+    p4 <<   cam_params->CamSize.width, cam_params->CamSize.height, 1.0;
+    p5 <<   cam_params->CamSize.width*0.5, cam_params->CamSize.height*0.5, 1.0; //this is the center of the frustum
+    //...in camera coordinates
+    Eigen::Vector3f xc1,xc2,xc3,xc4,xc5;
+    Eigen::Matrix3f K = Eigen::Matrix3f::Zero();
+    cv::cv2eigen(cam_params->CameraMatrix,K);
+    xc1 = (K.inverse() * p1) * focal_length;
+    xc2 = (K.inverse() * p2) * focal_length;
+    xc3 = (K.inverse() * p3) * focal_length;
+    xc4 = (K.inverse() * p4) * focal_length;
+    xc5 = (K.inverse() * p5) * focal_length;
+
+    t1 << 0.0, 1.0;
+    t2 << 1.0, 1.0;
+    t3 << 0.0, 0.0;
+    t4 << 1.0, 0.0;
+    t5 << 0.5, 0.5;
+
+
+    ver.push_back(cam_pos[0]);  ver.push_back(cam_pos[1]);  ver.push_back(cam_pos[2]);
+    ver.push_back(xc1[0]);      ver.push_back(xc1[1]);      ver.push_back(xc1[2]);
+    ver.push_back(xc2[0]);      ver.push_back(xc2[1]);      ver.push_back(xc2[2]);
+    ver.push_back(xc3[0]);      ver.push_back(xc3[1]);      ver.push_back(xc3[2]);
+    ver.push_back(xc4[0]);      ver.push_back(xc4[1]);      ver.push_back(xc4[2]);
+    ver.push_back(xc5[0]);      ver.push_back(xc5[1]);      ver.push_back(xc5[2]);
+    ver.push_back(xc1[0]);      ver.push_back(xc1[1]);      ver.push_back(xc1[2]);
+    ver.push_back(xc2[0]);      ver.push_back(xc2[1]);      ver.push_back(xc2[2]);
+    ver.push_back(xc3[0]);      ver.push_back(xc3[1]);      ver.push_back(xc3[2]);
+    ver.push_back(xc4[0]);      ver.push_back(xc4[1]);      ver.push_back(xc4[2]);
+
+    tex.push_back(0);           tex.push_back(0);
+    tex.push_back(t1[0]);       tex.push_back(t1[1]);
+    tex.push_back(t2[0]);       tex.push_back(t2[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t4[0]);       tex.push_back(t4[1]);
+    tex.push_back(t5[0]);       tex.push_back(t5[1]);
+    /*tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);
+    tex.push_back(t3[0]);       tex.push_back(t3[1]);*/
+
+    tri.push_back(1); tri.push_back(2); tri.push_back(3); //lower left triangle of the board - CCW
+    tri.push_back(2); tri.push_back(4); tri.push_back(3); //upper right triangle of the board - CCW
+    tri.push_back(0); tri.push_back(8); tri.push_back(6);  //frustum
+    tri.push_back(0); tri.push_back(9); tri.push_back(8);
+    tri.push_back(0); tri.push_back(7); tri.push_back(9);
+    tri.push_back(0); tri.push_back(6); tri.push_back(7);
 }
 
 /*
