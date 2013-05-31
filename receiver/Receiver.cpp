@@ -66,7 +66,9 @@ static void compute_normals(Data3d& data)
 }
 
 Receiver::Receiver() :
-    is_running(false)
+    is_running(false),
+    fov_v(0.0),
+    fov_h(0.0)
 {}
 
 Receiver::~Receiver()
@@ -223,6 +225,20 @@ void Receiver::run()
                 Lock l(m);
                 updates[p->guid.g] = data;
 
+            });
+            break;
+        }
+        case ID_USER_PACKET_FACETRACKER: {
+            auto peer = peers[p->guid.g];
+            peer->worker.begin([p, peer, this] {
+
+                fov_v = 0.0;
+                fov_h = 0.0;
+                RakNet::BitStream bs(p->data, p->length, false);
+                bs.IgnoreBytes(sizeof(RakNet::MessageID));
+                bs.Read(fov_h);
+                bs.Read(fov_v);
+                //std::cout << "FOV: [" << fov_H << " - " << fov_W << std::endl;
             });
             break;
         }

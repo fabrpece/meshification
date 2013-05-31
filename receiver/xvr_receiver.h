@@ -11,4 +11,5 @@ extern "C" {
     void xvr_receiver_reset_position(const char* name);
     void xvr_receiver_toggle_point_smooth();
     void xvr_receiver_save_view();
+    void xvr_receiver_get_FOV(float& fov_h, float& fov_v);
 }

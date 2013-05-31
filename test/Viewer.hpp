@@ -7,6 +7,7 @@ class Viewer : public QGLViewer
     Q_OBJECT;
 
     const int width, height;
+    bool doInteractiveZooming;
 
     void init();
     void draw();

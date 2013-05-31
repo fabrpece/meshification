@@ -88,4 +88,9 @@ void xvr_receiver_save_view()
     p->save_view();
 }
 
+void xvr_receiver_get_FOV(float& fov_h, float& fov_v)
+{
+    p->getFOV(fov_h, fov_v);
+}
+
 }
