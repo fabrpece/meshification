@@ -231,7 +231,12 @@ void Receiver::run()
         case ID_USER_PACKET_FACETRACKER: {
             auto peer = peers[p->guid.g];
             peer->worker.begin([p, peer, this] {
-
+                std::unordered_map<std::uint64_t, std::shared_ptr<Model>>::const_iterator got = models.find(p->guid.g);
+                if ( got != models.end() )
+                {
+                    Lock l(m);
+                    delete_models.insert(p->guid.g);
+                }
                 fov_v = 0.0;
                 fov_h = 0.0;
                 RakNet::BitStream bs(p->data, p->length, false);
