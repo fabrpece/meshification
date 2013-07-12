@@ -135,13 +135,12 @@ void Consumer::operator()(const std::vector<float>& ver, const std::vector<unsig
         const auto t0 = myclock::now();
         std::vector<aruco::Marker> markers;
         cv::Mat frame(480, 640, CV_8UC3, const_cast<char*>(rgb.data()));
-        //marker_detector->detect(frame, markers, *cam_params, 0.197, false);
         if (use_marker_tracking)
-            marker_detector->detect(frame, markers, *cam_params, 0.288, false);
+            marker_detector->detect(frame, markers, *cam_params, 0.289, false);
         for (auto& m : markers) {
             m.draw(frame, cv::Scalar(255, 0, 0));
-            if (m.id != 45)
-                continue;
+            /*if (m.id != 45)
+                continue;*/
             cv::Mat rot_src = m.Rvec.clone(), rot;
             rot_src.at<float>(1, 0) *= -1.0f;
             rot_src.at<float>(2, 0) *= -1.0f;

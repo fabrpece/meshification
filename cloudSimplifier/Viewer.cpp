@@ -343,7 +343,7 @@ static
 bool calibrate(double* modelview,
                const std::string& calibration_image,
                const std::string& extrinsics_file,
-               float marker_size = 0.179)
+               float marker_size = 0.289)
 {
 
     aruco::CameraParameters cam_params;
@@ -382,7 +382,7 @@ bool calibrate(double* modelview,
         std::cout << " " << modelview[i];
     std::cout << std::endl;
     cv::imshow("Marker location", frame);
-    cv::waitKey(15);
+    cv::waitKey(30);
     return marker_found;
 }
 
@@ -480,10 +480,10 @@ void Viewer::getAllOptions()
         std::string image_file(byteArray2.constData());
 
         double marker_size = QInputDialog::getDouble(this, tr("Select marker size"),
-                                                 tr("voxel grid leaf size"), 0.179,
+                                                 tr("Marker size"), 0.2890,
                                                  0.0,1.0,4, &ok);
         if(!ok)
-            marker_size = 0.179;
+            marker_size = marker_size;
 
         calibrate(modelview,
                   image_file,

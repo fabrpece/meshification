@@ -1,17 +1,40 @@
 #include <functional>
+#include <sstream>
 #include <GL/glew.h>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QInputDialog>
 #include "Viewer.hpp"
 #include "../receiver/xvr_receiver.h"
 
 Viewer::Viewer(const int w, const int h, QWidget* parent):
     QGLViewer(parent),
     width(w), height(h),
-    doInteractiveZooming(false)/*,
-    depth_stream(new std::ofstream("kinect0.depth", std::ios::binary))*/
+    doInteractiveZooming(false),
+    loadStatic(false)/*,
+      depth_stream(new std::ofstream("kinect0.depth", std::ios::binary))*/
 {
     setWindowTitle("Meshified Point Cloud Viewer");
+    bool ok;
+    QStringList options;
+    options.push_back(QString("Yes"));
+    options.push_back(QString("No"));
+    QString downsample_selected = QInputDialog::getItem(this, tr("Load static environment"),
+                                                        tr("Load static environment?"), options,
+                                                        0, false, &ok);
+
+    if(downsample_selected == QString("Yes"))
+    {
+        loadStatic = true;
+
+
+        QString fileName = QFileDialog::getOpenFileName(NULL,tr("Open PLY file"), ".", tr("*.ply"));
+        QByteArray byteArray = fileName.toUtf8();
+        envFname = std::string(byteArray.constData());
+
+
+    }
 }
 
 Viewer::~Viewer()
@@ -47,7 +70,10 @@ void Viewer::init()
     startAnimation();
 
     xvr_receiver_init();
-    xvr_receiver_load_static("pisa_downsampled_bin3.ply");
+
+    if(loadStatic)
+        xvr_receiver_load_static(envFname.c_str());
+
     //xvr_receiver_load_panorama("pano");
 }
 
@@ -78,17 +104,38 @@ void Viewer::keyPressEvent(QKeyEvent* e)
         if (glIsEnabled(GL_TEXTURE_2D) == GL_TRUE) {
             glDisable(GL_TEXTURE_2D);
             glEnable(GL_LIGHTING);
+            this->displayMessage("Texture Disabled");
         }
         else {
             glEnable(GL_TEXTURE_2D);
             glDisable(GL_LIGHTING);
+            this->displayMessage("Texture Enabled");
         }
         updateGL();
     }
     else if (e->key() == Qt::Key_Z)
     {
         doInteractiveZooming = !doInteractiveZooming;
+        if(doInteractiveZooming)
+            this->displayMessage("Interactive Zoom ON");
+        else
+            this->displayMessage("Interactive Zoom OFF");
         updateGL();
+    }
+    else if (e->key() == Qt::Key_C)
+    {
+        qglviewer::Vec camPos = camera()->position();
+        std::stringstream ss;
+        ss << "Camera Position: " << camPos[0] << " - " << camPos[1] << " - " << camPos[2] << std::flush;
+        this->displayMessage(ss.str().c_str(),5000);
+    }
+    else if (e->key() == Qt::Key_P)
+    {
+        qglviewer::Vec camPos(-6.20844, -0.802218, -0.0460527);
+        std::stringstream ss;
+        ss << "Setting Camera Position to: " << camPos[0] << " - " << camPos[1] << " - " << camPos[2] << std::flush;
+        this->displayMessage(ss.str().c_str(),5000);
+        camera()->setPosition(camPos);
     }
     else
         QGLViewer::keyPressEvent(e);

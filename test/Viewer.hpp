@@ -8,6 +8,8 @@ class Viewer : public QGLViewer
 
     const int width, height;
     bool doInteractiveZooming;
+    bool loadStatic;
+    std::string envFname;
 
     void init();
     void draw();
